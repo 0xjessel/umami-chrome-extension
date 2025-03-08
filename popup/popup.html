@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Umami Analytics</title>
   <link href="popup.css" rel="stylesheet">
 </head>
+
 <body>
   <div id="app">
     <!-- Header -->
     <header>
       <div class="header-title">
         <img src="../icons/icon16.png" alt="Umami Logo" class="header-logo">
-        <h1 id="serverName" style="font-size: 12px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0;">Loading...</h1>
+        <h1 id="serverName"
+          style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0;">
+          Loading...</h1>
       </div>
       <div class="header-buttons">
         <button id="retryButton" title="Retry" class="hidden">
@@ -22,15 +26,17 @@
         </button>
         <button id="refreshButton" title="Refresh Stats">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-            <path d="M21 12a9 9 0 1 1-1.8-5.4L23 10M17.5 6.5L19 3l3.5 1.5" />
+            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
           </svg>
         </button>
         <button id="settingsButton" title="Open Settings">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-          <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-        </svg>
-      </button>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+          </svg>
+        </button>
+      </div>
     </header>
 
     <!-- Main Content -->
@@ -77,6 +83,36 @@
           <div class="stat-value">-</div>
           <div class="stat-label">Today</div>
         </div>
+
+        <!-- Visits -->
+        <div class="stat-card" id="visits">
+          <div class="stat-header">
+            <h3>Visits</h3>
+            <span class="trend"></span>
+          </div>
+          <div class="stat-value">-</div>
+          <div class="stat-label">Today</div>
+        </div>
+
+        <!-- Bounces -->
+        <div class="stat-card" id="bounces">
+          <div class="stat-header">
+            <h3>Bounces</h3>
+            <span class="trend"></span>
+          </div>
+          <div class="stat-value">-</div>
+          <div class="stat-label">Today</div>
+        </div>
+
+        <!-- Total Time -->
+        <div class="stat-card" id="totalTime">
+          <div class="stat-header">
+            <h3>Total Time</h3>
+            <span class="trend"></span>
+          </div>
+          <div class="stat-value">-</div>
+          <div class="stat-label">Today</div>
+        </div>
       </div>
     </main>
 
@@ -87,4 +123,5 @@
   </div>
   <script type="module" src="popup.js"></script>
 </body>
+
 </html>
