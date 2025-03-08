@@ -249,6 +249,31 @@ input[readonly] {
   display: none;
 }
 
+/* Footer Styles */
+.footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+  padding: 1rem 0;
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  color: var(--text-light);
+  transition: color 0.2s;
+}
+
+.github-link:hover {
+  color: var(--primary);
+}
+
+.github-icon {
+  width: 24px;
+  height: 24px;
+}
+
 /* Tooltip Styles */
 .tooltip-container {
   position: relative;
