@@ -14,7 +14,17 @@ export class StorageManager {
     showBounces: false,
     showTotalTime: false,
     badgeMetric: 'visits',
-    serverType: 'self-hosted'
+    serverType: 'self-hosted',
+    displayName: '',
+    cachedMetrics: {
+      activeUsers: null,
+      pageViews: { value: null, trend: null },
+      visitors: { value: null, trend: null },
+      visits: { value: null, trend: null },
+      bounces: { value: null, trend: null },
+      totalTime: { value: null, trend: null },
+      lastUpdated: null
+    }
   };
 
   /**
@@ -41,13 +51,18 @@ export class StorageManager {
       throw new Error('Missing required credentials');
     }
 
+    // Format the display name from the URL
+    const url = new URL(baseUrl.trim());
+    const displayName = url.hostname.replace(/^www\./, '');
+
     await chrome.storage.sync.set({
       serverType: 'self-hosted',
       baseUrl: baseUrl.trim(),
       token: token.trim(),
       websiteId: websiteId.trim(),
       username: username.trim(),
-      password: password.trim()
+      password: password.trim(),
+      displayName
     });
   }
 
@@ -102,5 +117,19 @@ export class StorageManager {
       badgeMetric,
       pollingInterval: pollingInterval ?? DEFAULT_POLLING_INTERVAL
     });
+  }
+
+  /**
+   * Update cached metrics
+   */
+  static async updateCachedMetrics(metrics) {
+    // Add timestamp to track when the cache was last updated
+    const cachedMetrics = {
+      ...metrics,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    await chrome.storage.sync.set({ cachedMetrics });
+    return cachedMetrics;
   }
 }

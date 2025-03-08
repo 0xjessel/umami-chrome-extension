@@ -146,16 +146,179 @@ function showElement(elementToShow) {
   }
 }
 
+// Immediately set server name on load
+async function setInitialServerName() {
+  try {
+    const config = await StorageManager.getConfig();
+    if (config.displayName) {
+      elements.serverName.textContent = config.displayName;
+    } else if (config.baseUrl) {
+      // Extract hostname if we have a URL but no display name
+      const url = new URL(config.baseUrl);
+      const displayName = url.hostname.replace(/^www\./, '');
+      elements.serverName.textContent = displayName;
+      
+      // Cache it for future use
+      await StorageManager.updateConfig({ displayName });
+    }
+  } catch (error) {
+    console.error('Failed to load initial server name:', error);
+  }
+}
+
+/**
+ * Load and display cached metrics if they exist
+ */
+async function loadCachedMetrics() {
+  try {
+    const config = await StorageManager.getConfig();
+    const { cachedMetrics } = config;
+    
+    // Skip if no cached data
+    if (!cachedMetrics || !cachedMetrics.lastUpdated) {
+      return false;
+    }
+    
+    // Active Users
+    if (cachedMetrics.activeUsers !== null) {
+      elements.activeUsers.querySelector('.stat-value').textContent = formatNumber(cachedMetrics.activeUsers);
+    }
+    
+    // Page Views
+    if (cachedMetrics.pageViews?.value !== null) {
+      elements.pageViews.querySelector('.stat-value').textContent = formatNumber(cachedMetrics.pageViews.value);
+      if (cachedMetrics.pageViews.trend) {
+        elements.pageViews.querySelector('.trend').textContent = cachedMetrics.pageViews.trend;
+      }
+    }
+    
+    // Visitors
+    if (cachedMetrics.visitors?.value !== null) {
+      elements.visitors.querySelector('.stat-value').textContent = formatNumber(cachedMetrics.visitors.value);
+      if (cachedMetrics.visitors.trend) {
+        elements.visitors.querySelector('.trend').textContent = cachedMetrics.visitors.trend;
+      }
+    }
+    
+    // Visits
+    if (cachedMetrics.visits?.value !== null) {
+      elements.visits.querySelector('.stat-value').textContent = formatNumber(cachedMetrics.visits.value);
+      if (cachedMetrics.visits.trend) {
+        elements.visits.querySelector('.trend').textContent = cachedMetrics.visits.trend;
+      }
+    }
+    
+    // Bounces
+    if (cachedMetrics.bounces?.value !== null) {
+      elements.bounces.querySelector('.stat-value').textContent = formatNumber(cachedMetrics.bounces.value);
+      if (cachedMetrics.bounces.trend) {
+        elements.bounces.querySelector('.trend').textContent = cachedMetrics.bounces.trend;
+      }
+    }
+    
+    // Total Time
+    if (cachedMetrics.totalTime?.value !== null) {
+      const formattedTime = formatTime(cachedMetrics.totalTime.value);
+      elements.totalTime.querySelector('.stat-value').textContent = formattedTime;
+      if (cachedMetrics.totalTime.trend) {
+        elements.totalTime.querySelector('.trend').textContent = cachedMetrics.totalTime.trend;
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to load cached metrics:', error);
+    return false;
+  }
+}
+
+/**
+ * Adjust popup height based on visible metrics
+ */
+function adjustPopupHeight() {
+  // Get all visible stat cards
+  const visibleCards = Array.from(document.querySelectorAll('.stat-card'))
+    .filter(card => !card.classList.contains('hidden'));
+  
+  if (visibleCards.length === 0) return;
+  
+  // Get the header height
+  const headerHeight = document.querySelector('header').offsetHeight;
+  
+  // Calculate based on number of cards
+  const cardHeight = 80; // Each card is 80px tall
+  const cardGap = 8; // 0.5rem gap between cards
+  const mainPadding = 16; // 0.5rem top and bottom padding (8px * 2)
+  
+  // Calculate content height based on number of cards
+  const contentHeight = (visibleCards.length * cardHeight) + ((visibleCards.length - 1) * cardGap);
+  const totalHeight = headerHeight + contentHeight + mainPadding;
+  
+  // Set height - dynamically adjusts based on actual number of visible cards
+  document.body.style.height = `${totalHeight}px`;
+}
+
+/**
+ * Initialize popup
+ */
+document.addEventListener('DOMContentLoaded', async () => {
+  // Immediately set server name and load cached metrics
+  await setInitialServerName();
+  const hasCachedMetrics = await loadCachedMetrics();
+
+  // Load user preferences
+  const config = await StorageManager.getConfig();
+  
+  // Apply visibility settings based on user preferences
+  if (!config.showActiveUsers) elements.activeUsers.classList.add('hidden');
+  if (!config.showPageViews) elements.pageViews.classList.add('hidden');
+  if (!config.showVisitors) elements.visitors.classList.add('hidden');
+  if (!config.showVisits) elements.visits.classList.add('hidden');
+  if (!config.showBounces) elements.bounces.classList.add('hidden');
+  if (!config.showTotalTime) elements.totalTime.classList.add('hidden');
+  
+  // Show stats container immediately
+  showElement(elements.stats);
+  
+  // Set initial loading state if needed
+  if (!hasCachedMetrics) {
+    setLoadingState();
+  }
+
+  // Adjust card layout for responsive display
+  document.querySelectorAll('.stat-card').forEach(card => {
+    card.style.display = 'flex';
+    card.style.flexDirection = 'column';
+    card.style.justifyContent = 'space-between';
+  });
+
+  // Start loading data with debounce
+  debouncedUpdate();
+});
+
 /**
  * Update server name in header
  */
 async function updateServerName() {
   const config = await StorageManager.getConfig();
-  const url = new URL(config.baseUrl);
-
-  // Remove protocol and www if present
-  const displayName = url.hostname.replace(/^www\./, '');
-  elements.serverName.textContent = displayName;
+  
+  // Use cached display name if available, otherwise format from URL
+  let displayName = config.displayName;
+  if (!displayName && config.baseUrl) {
+    try {
+      const url = new URL(config.baseUrl);
+      displayName = url.hostname.replace(/^www\./, '');
+      
+      // Cache the display name for future use
+      await StorageManager.updateConfig({ displayName });
+    } catch (error) {
+      console.error('Error formatting server URL:', error);
+    }
+  }
+  
+  if (displayName) {
+    elements.serverName.textContent = displayName;
+  }
 
   // Get the container width
   const headerTitle = document.querySelector('.header-title');
@@ -204,12 +367,31 @@ async function initializeAPI() {
  * Set loading state for stats
  */
 function setLoadingState() {
-  elements.activeUsers.querySelector('.stat-value').textContent = '...';
-  elements.pageViews.querySelector('.stat-value').textContent = '...';
-  elements.visitors.querySelector('.stat-value').textContent = '...';
-  elements.visits.querySelector('.stat-value').textContent = '...';
-  elements.bounces.querySelector('.stat-value').textContent = '...';
-  elements.totalTime.querySelector('.stat-value').textContent = '...';
+  // Get all stat value elements
+  const statValueElements = [
+    elements.activeUsers.querySelector('.stat-value'),
+    elements.pageViews.querySelector('.stat-value'),
+    elements.visitors.querySelector('.stat-value'),
+    elements.visits.querySelector('.stat-value'),
+    elements.bounces.querySelector('.stat-value'),
+    elements.totalTime.querySelector('.stat-value')
+  ];
+  
+  // Check if any have values other than loading placeholder
+  const hasDisplayedValues = statValueElements.some(el => 
+    el.textContent !== '' && el.textContent !== '-' && el.textContent !== '...');
+  
+  // Only set loading state for elements without values
+  if (!hasDisplayedValues) {
+    elements.activeUsers.querySelector('.stat-value').textContent = '...';
+    elements.pageViews.querySelector('.stat-value').textContent = '...';
+    elements.visitors.querySelector('.stat-value').textContent = '...';
+    elements.visits.querySelector('.stat-value').textContent = '...';
+    elements.bounces.querySelector('.stat-value').textContent = '...';
+    elements.totalTime.querySelector('.stat-value').textContent = '...';
+  }
+  
+  // Always clear trends during loading as they'll be updated
   elements.pageViews.querySelector('.trend').textContent = '';
   elements.visitors.querySelector('.trend').textContent = '';
   elements.visits.querySelector('.trend').textContent = '';
@@ -244,6 +426,22 @@ function updateStatsUI(activeUsers, stats) {
   const formattedTime = formatTime(stats.totaltime.value);
   elements.totalTime.querySelector('.stat-value').textContent = formattedTime;
   updateTrend(elements.totalTime, stats.totaltime.value, stats.totaltime.prev);
+  
+  // Cache the updated metrics
+  const pageViewsTrend = elements.pageViews.querySelector('.trend').textContent;
+  const visitorsTrend = elements.visitors.querySelector('.trend').textContent;
+  const visitsTrend = elements.visits.querySelector('.trend').textContent;
+  const bouncesTrend = elements.bounces.querySelector('.trend').textContent;
+  const totalTimeTrend = elements.totalTime.querySelector('.trend').textContent;
+  
+  StorageManager.updateCachedMetrics({
+    activeUsers,
+    pageViews: { value: stats.pageviews.value, trend: pageViewsTrend },
+    visitors: { value: stats.visitors.value, trend: visitorsTrend },
+    visits: { value: stats.visits.value, trend: visitsTrend },
+    bounces: { value: stats.bounces.value, trend: bouncesTrend },
+    totalTime: { value: stats.totaltime.value, trend: totalTimeTrend }
+  });
   
   // Adjust popup height after data is loaded
   adjustPopupHeight();
@@ -328,63 +526,6 @@ function cleanup() {
   api = null;
   isUpdating = false;
 }
-
-/**
- * Adjust popup height based on visible metrics
- */
-function adjustPopupHeight() {
-  // Get all visible stat cards
-  const visibleCards = Array.from(document.querySelectorAll('.stat-card'))
-    .filter(card => !card.classList.contains('hidden'));
-  
-  if (visibleCards.length === 0) return;
-  
-  // Get the header height
-  const headerHeight = document.querySelector('header').offsetHeight;
-  
-  // Calculate based on number of cards
-  const cardHeight = 80; // Each card is 80px tall
-  const cardGap = 8; // 0.5rem gap between cards
-  const mainPadding = 16; // 0.5rem top and bottom padding (8px * 2)
-  
-  // Calculate content height based on number of cards
-  const contentHeight = (visibleCards.length * cardHeight) + ((visibleCards.length - 1) * cardGap);
-  const totalHeight = headerHeight + contentHeight + mainPadding;
-  
-  // Set height - dynamically adjusts based on actual number of visible cards
-  document.body.style.height = `${totalHeight}px`;
-}
-
-/**
- * Initialize popup
- */
-document.addEventListener('DOMContentLoaded', async () => {
-  // Load user preferences
-  const config = await StorageManager.getConfig();
-  
-  // Apply visibility settings based on user preferences
-  if (!config.showActiveUsers) elements.activeUsers.classList.add('hidden');
-  if (!config.showPageViews) elements.pageViews.classList.add('hidden');
-  if (!config.showVisitors) elements.visitors.classList.add('hidden');
-  if (!config.showVisits) elements.visits.classList.add('hidden');
-  if (!config.showBounces) elements.bounces.classList.add('hidden');
-  if (!config.showTotalTime) elements.totalTime.classList.add('hidden');
-  
-  // Show stats container immediately
-  showElement(elements.stats);
-  // Set initial loading state
-  setLoadingState();
-
-  // Adjust card layout for responsive display
-  document.querySelectorAll('.stat-card').forEach(card => {
-    card.style.display = 'flex';
-    card.style.flexDirection = 'column';
-    card.style.justifyContent = 'space-between';
-  });
-
-  // Start loading data with debounce
-  debouncedUpdate();
-});
 
 // Cleanup when popup is closed
 window.addEventListener('unload', cleanup);
