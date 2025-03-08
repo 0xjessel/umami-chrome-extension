@@ -265,6 +265,18 @@ input[readonly] {
   opacity: 0.8;
 }
 
+.creator-text a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.creator-text a:visited, 
+.creator-text a:hover, 
+.creator-text a:active {
+  color: inherit;
+  text-decoration: none;
+}
+
 .github-link {
   display: flex;
   align-items: center;

@@ -4,14 +4,15 @@ A Chrome extension that provides real-time analytics from your self-hosted Umami
 
 ## Features
 
-- 🔄 Real-time metrics display with instant updates
-- 👥 Active users counter
-- 📊 Daily page views and visitor statistics with trend indicators
-- 🎯 Configurable badge updates with customizable polling intervals
-- 🔒 Secure credential storage with robust authentication
+- 🔄 Real-time metrics display with configurable refresh intervals (30 seconds to 30 minutes)
+- 👥 Active users counter showing visitors in the last 5 minutes
+- 📊 Daily metrics including page views, visitors, visits, bounces, and total time with trend indicators
+- 🎯 Customizable browser badge that can display various metrics (active users, page views, visitors, visits, bounces, or total time)
+- 🔒 Secure credential storage with authentication token management
 - ⚡ Lightweight and performant with optimized API calls
-- 🎨 Modern, responsive UI with dark mode support
-- 🌐 Designed specifically for self-hosted Umami servers
+- 🎨 Modern, responsive UI
+- 🌐 Compatible with self-hosted Umami servers
+- 🔌 Simple setup process with connection verification
 
 ## Installation
 
@@ -118,14 +119,6 @@ umami-chrome-extension/
     └── api.test.js  # API client tests
 ```
 
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 ## Security
 
 - Credentials are stored securely using Chrome's Storage API with encryption
@@ -154,8 +147,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- [Umami](https://umami.is/) - Open source analytics platform
+- [Umami](https://umami.is/) - The awesome open source analytics platform that inspired this extension. Umami is a simple, privacy-focused alternative to Google Analytics that respects user privacy and provides powerful analytics capabilities without compromising user data.
 - [Chrome Extension Developer Guide](https://developer.chrome.com/docs/extensions/mv3/)
+
+This extension is not officially affiliated with Umami but was built with appreciation for their open-source analytics solution.
 
 ## Troubleshooting
 
