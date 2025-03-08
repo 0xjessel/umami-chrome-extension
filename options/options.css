@@ -256,6 +256,13 @@ input[readonly] {
   align-items: center;
   margin-top: 2rem;
   padding: 1rem 0;
+  gap: 10px;
+}
+
+.creator-text {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  opacity: 0.8;
 }
 
 .github-link {
