@@ -314,8 +314,21 @@ function cleanup() {
   isUpdating = false;
 }
 
-// Initialize popup
-document.addEventListener('DOMContentLoaded', () => {
+/**
+ * Initialize popup
+ */
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load user preferences
+  const config = await StorageManager.getConfig();
+  
+  // Apply visibility settings based on user preferences
+  if (!config.showActiveUsers) elements.activeUsers.classList.add('hidden');
+  if (!config.showPageViews) elements.pageViews.classList.add('hidden');
+  if (!config.showVisitors) elements.visitors.classList.add('hidden');
+  if (!config.showVisits) elements.visits.classList.add('hidden');
+  if (!config.showBounces) elements.bounces.classList.add('hidden');
+  if (!config.showTotalTime) elements.totalTime.classList.add('hidden');
+  
   // Show stats container immediately
   showElement(elements.stats);
   // Set initial loading state

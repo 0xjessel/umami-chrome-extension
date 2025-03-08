@@ -61,9 +61,13 @@ async function loadSettings() {
     input.checked = input.value === config.badgeMetric;
   });
 
+  // Load visible metrics settings
   elements.displayForm.querySelector('input[name="showActiveUsers"]').checked = config.showActiveUsers;
   elements.displayForm.querySelector('input[name="showPageViews"]').checked = config.showPageViews;
   elements.displayForm.querySelector('input[name="showVisitors"]').checked = config.showVisitors;
+  elements.displayForm.querySelector('input[name="showVisits"]').checked = config.showVisits;
+  elements.displayForm.querySelector('input[name="showBounces"]').checked = config.showBounces;
+  elements.displayForm.querySelector('input[name="showTotalTime"]').checked = config.showTotalTime;
   
   // Set polling interval
   const pollingSelect = elements.displayForm.querySelector('#pollingInterval');
@@ -193,6 +197,9 @@ async function saveDisplaySettings(event) {
     showActiveUsers: formData.get('showActiveUsers') === 'on',
     showPageViews: formData.get('showPageViews') === 'on',
     showVisitors: formData.get('showVisitors') === 'on',
+    showVisits: formData.get('showVisits') === 'on',
+    showBounces: formData.get('showBounces') === 'on',
+    showTotalTime: formData.get('showTotalTime') === 'on',
     pollingInterval: POLLING_INTERVALS[formData.get('pollingInterval')]
   };
 

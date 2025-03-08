@@ -10,6 +10,9 @@ export class StorageManager {
     showActiveUsers: true,
     showPageViews: true,
     showVisitors: true,
+    showVisits: false,
+    showBounces: false,
+    showTotalTime: false,
     badgeMetric: 'active',
     serverType: 'cloud',
     baseUrl: 'https://cloud.umami.is'
@@ -117,6 +120,9 @@ export class StorageManager {
     showActiveUsers,
     showPageViews,
     showVisitors,
+    showVisits,
+    showBounces,
+    showTotalTime,
     badgeMetric,
     pollingInterval
   }) {
@@ -124,6 +130,9 @@ export class StorageManager {
       showActiveUsers,
       showPageViews,
       showVisitors,
+      showVisits,
+      showBounces,
+      showTotalTime,
       badgeMetric,
       pollingInterval: pollingInterval ?? DEFAULT_POLLING_INTERVAL
     });
