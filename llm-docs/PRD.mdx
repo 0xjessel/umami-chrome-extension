@@ -1,0 +1,109 @@
+# Product Requirements Document: Umami Analytics Chrome Extension
+
+## Overview
+The Umami Analytics Chrome Extension provides website owners with real-time analytics data directly in their browser. This extension integrates with existing Umami Analytics installations to display key metrics without requiring users to navigate to the Umami dashboard.
+
+## Problem Statement
+Website owners who use Umami Analytics need to frequently check their analytics dashboard to monitor traffic metrics. This creates friction and interrupts their workflow when they want to quickly check current site performance.
+
+## Solution
+A Chrome extension that displays real-time analytics data from Umami directly in the browser toolbar, allowing users to monitor key metrics without switching contexts.
+
+## Target Users
+- Website owners and administrators who already use Umami Analytics
+- Content creators who want to monitor the performance of their content in real-time
+- Marketing professionals tracking campaign performance
+
+## Key Features
+
+### 1. Live Counter Display
+- A simple, unobtrusive icon in the Chrome toolbar
+- Numerical counter displayed as a bubble/badge on the icon
+- Counter updates at configurable intervals
+
+### 2. Metric Options
+Users can choose to display one of the following metrics:
+- Number of active users on the site in real-time
+- Number of page views for a specific page
+- Number of total visitors for the current day
+
+### 3. Configuration Panel
+- Umami server URL
+- Authentication credentials (username/password or API key)
+- Website ID selection
+- Specific page URL for page view tracking (optional)
+- Update frequency (polling interval)
+- Display metric selection
+
+### 4. Additional Features
+- Tooltip with additional context when hovering over the counter
+- Option to click the icon to open a small popup with more detailed metrics
+- Ability to quickly navigate to the full Umami dashboard
+
+## Technical Requirements
+
+### Umami API Integration
+- The extension must connect to the Umami API to fetch real-time data using the following endpoints:
+  - `/api/websites/:websiteId/active` - To get the number of active users on the website (within the last 5 minutes)
+  - `/api/websites/:websiteId/stats` - To get daily visitor and visit counts
+- Authentication methods:
+  - For self-hosted Umami: Username/password authentication
+  - For Umami Cloud: API key authentication
+- Proper error handling for API failures including rate limits and network issues
+
+### Performance Considerations
+- Efficient polling to minimize resource usage and API rate limits
+- Configurable polling frequency (minimum: 30 seconds, recommended: 60 seconds)
+- Option to pause polling when not actively needed
+- Caching of API responses to reduce unnecessary requests
+- Intelligent refresh strategy based on tab activity state
+
+### Security Requirements
+- Secure storage of authentication credentials using Chrome's Storage API with encryption
+- No tracking or collection of user data beyond what's needed for functionality
+- All API requests must use HTTPS
+- Implementation of proper CORS handling
+- Compliance with Chrome Web Store policies
+- Clear privacy policy explaining data handling practices
+
+## User Experience
+
+### Setup Flow
+1. User installs the extension
+2. First-time setup wizard prompts for:
+   - Umami server URL
+   - Authentication credentials
+   - Website selection
+   - Preferred metric to display
+   - Polling frequency
+
+### Daily Usage
+1. Extension icon displays the selected metric in real-time
+2. User can click the icon to view additional metrics in a popup
+3. User can access settings to modify configuration as needed
+
+## Success Metrics
+- User retention rate after 30 days
+- Average daily active users
+- User satisfaction (based on Chrome Web Store ratings)
+- Number of successful API connections
+
+## Timeline and Milestones
+1. Initial development and testing (2 weeks)
+2. Beta release to limited users (1 week)
+3. Refinement based on feedback (1 week)
+4. Public release on Chrome Web Store
+
+## Future Enhancements (v2)
+- Additional metrics display options
+- Customizable alerts for traffic thresholds
+- Dark/light mode toggle
+- Comparison view (today vs. yesterday)
+- Historical trend mini-graph in popup
+
+## Limitations and Constraints
+- Requires an existing Umami Analytics installation (v2.0 or higher)
+- Dependent on Umami API availability and performance
+- Subject to API rate limits (especially for Umami Cloud users)
+- Chrome browser only (initially)
+- Cannot track metrics for websites that don't have Umami installed

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Umami Analytics</title>
+  <link href="popup.css" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header>
+      <div class="header-title">
+        <img src="../icons/icon16.png" alt="Umami Logo" class="header-logo">
+        <h1 id="serverName" style="font-size: 12px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0;">Loading...</h1>
+      </div>
+      <div class="header-buttons">
+        <button id="retryButton" title="Retry" class="hidden">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M21 12a9 9 0 1 1-1.8-5.4L23 10M17.5 6.5L19 3l3.5 1.5" />
+          </svg>
+        </button>
+        <button id="refreshButton" title="Refresh Stats">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M21 12a9 9 0 1 1-1.8-5.4L23 10M17.5 6.5L19 3l3.5 1.5" />
+          </svg>
+        </button>
+        <button id="settingsButton" title="Open Settings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+        </svg>
+      </button>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+      <!-- Setup Required Message -->
+      <div id="setupRequired" class="hidden">
+        <p>Please configure your Umami credentials in the extension settings.</p>
+        <button id="openSettings" class="button">Open Settings</button>
+      </div>
+
+      <!-- Error Message -->
+      <div id="errorMessage" class="hidden">
+        <p>Failed to fetch analytics data. Please check your settings and try again.</p>
+      </div>
+
+      <!-- Stats Grid -->
+      <div id="stats" class="hidden">
+        <!-- Active Users -->
+        <div class="stat-card" id="activeUsers">
+          <div class="stat-header">
+            <h3>Active Users</h3>
+            <span class="trend"></span>
+          </div>
+          <div class="stat-value">-</div>
+          <div class="stat-label">Last 5 minutes</div>
+        </div>
+
+        <!-- Page Views -->
+        <div class="stat-card" id="pageViews">
+          <div class="stat-header">
+            <h3>Page Views</h3>
+            <span class="trend"></span>
+          </div>
+          <div class="stat-value">-</div>
+          <div class="stat-label">Today</div>
+        </div>
+
+        <!-- Unique Visitors -->
+        <div class="stat-card" id="visitors">
+          <div class="stat-header">
+            <h3>Visitors</h3>
+            <span class="trend"></span>
+          </div>
+          <div class="stat-value">-</div>
+          <div class="stat-label">Today</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Loading Spinner -->
+    <div id="loading" class="hidden">
+      <div class="spinner"></div>
+    </div>
+  </div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

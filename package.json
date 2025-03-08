@@ -1,0 +1,42 @@
+{
+  "name": "umami-chrome-extension",
+  "version": "1.0.0",
+  "description": "Chrome extension for Umami Analytics with real-time metrics display",
+  "private": true,
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development --watch",
+    "lint": "eslint src/**/*.js popup/**/*.js options/**/*.js background.js",
+    "format": "prettier --write \"**/*.{js,json,css,html,md}\"",
+    "test": "jest"
+  },
+  "keywords": [
+    "umami",
+    "analytics",
+    "chrome-extension",
+    "web-analytics"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.26.9",
+    "@babel/preset-env": "^7.26.9",
+    "babel-jest": "^29.7.0",
+    "babel-loader": "^9.2.1",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.11.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.3",
+    "html-webpack-plugin": "^5.6.3",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "mini-css-extract-plugin": "^2.9.2",
+    "prettier": "^3.5.3",
+    "sharp": "^0.33.5",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "main": "background.js"
+}

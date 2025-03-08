@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Umami Analytics Settings</title>
+  <link href="options.css" rel="stylesheet">
+  <style>
+    .validation-message {
+      font-size: 0.875rem;
+      color: var(--danger);
+      margin-top: 0.25rem;
+      display: none;
+    }
+
+    .validation-message:not(:empty) {
+      display: block;
+      margin-top: 0.25rem;
+    }
+
+    input:invalid {
+      border-color: var(--danger);
+    }
+
+    input:invalid:focus {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>Umami Analytics Settings</h1>
+    </header>
+
+    <main>
+      <!-- Credentials Section -->
+      <section class="card">
+        <h2>Umami Credentials</h2>
+        <form id="credentialsForm">
+          <div class="form-group">
+            <label>Server Type</label>
+            <div class="radio-group">
+              <label class="radio">
+                <input type="radio" name="serverType" value="cloud" checked>
+                <span>Umami Cloud</span>
+              </label>
+              <label class="radio">
+                <input type="radio" name="serverType" value="self-hosted">
+                <span>Self-hosted</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="baseUrl">Umami Server URL</label>
+            <input type="url" id="baseUrl" name="baseUrl" required 
+                   pattern="https?://.+" 
+                   placeholder="analytics.yourdomain.com"
+                   title="Please enter a valid URL starting with http:// or https://">
+            <div class="validation-message" id="urlValidation"></div>
+            <div class="help-text" id="urlHelp">Enter the full URL of your Umami server (e.g., https://analytics.yourdomain.com). For Umami Cloud, use https://cloud.umami.is</div>
+          </div>
+
+          <div id="cloudAuth" class="form-group">
+            <label for="apiKey">API Key</label>
+            <input type="password" id="apiKey" name="apiKey">
+            <div class="help-text">API key can be found in Settings > Profile > API Keys > Create API Key</div>
+          </div>
+
+          <div id="selfHostedAuth" class="form-group" style="display: none;">
+            <div class="form-group">
+              <label for="username">Username</label>
+              <input type="text" id="username" name="username">
+
+            </div>
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input type="password" id="password" name="password">
+
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="websiteId">Website ID</label>
+            <input type="text" id="websiteId" name="websiteId" required>
+            <div class="help-text">Website ID can be found in Settings > Websites > yourwebsite.com > Edit > Details</div>
+          </div>
+
+          <div class="button-group">
+            <button type="submit" class="button primary">Save Credentials</button>
+            <button type="button" id="verifyButton" class="button">Verify Connection</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Display Settings -->
+      <section class="card">
+        <h2>Display Settings</h2>
+        <form id="displayForm">
+          <div class="form-group">
+            <label>Badge Display</label>
+            <div class="radio-group vertical">
+              <label class="radio">
+                <input type="radio" name="badgeMetric" value="active">
+                <span>Active Users</span>
+              </label>
+              <label class="radio">
+                <input type="radio" name="badgeMetric" value="views">
+                <span>Page Views</span>
+              </label>
+              <label class="radio">
+                <input type="radio" name="badgeMetric" value="visitors">
+                <span>Visitors</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Visible Metrics</label>
+            <div class="checkbox-group vertical">
+              <label class="checkbox">
+                <input type="checkbox" name="showActiveUsers">
+                <span>Active Users</span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" name="showPageViews">
+                <span>Page Views</span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" name="showVisitors">
+                <span>Visitors</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="pollingInterval">Update Interval</label>
+            <select id="pollingInterval" name="pollingInterval">
+              <option value="THIRTY_SECONDS">30 seconds</option>
+              <option value="ONE_MINUTE" selected>1 minute</option>
+              <option value="TWO_MINUTES">2 minutes</option>
+              <option value="FIVE_MINUTES">5 minutes</option>
+              <option value="TEN_MINUTES">10 minutes</option>
+              <option value="THIRTY_MINUTES">30 minutes</option>
+            </select>
+          </div>
+
+          <div class="button-group">
+            <button type="submit" class="button primary">Save Settings</button>
+            <button type="button" id="resetButton" class="button danger">Reset to Default</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <!-- Status Messages -->
+    <div id="status" class="status hidden"></div>
+  </div>
+  <script type="module" src="../src/constants.js"></script>
+  <script type="module" src="../src/api.js"></script>
+  <script type="module" src="../src/storage.js"></script>
+  <script type="module" src="options.js"></script>
+</body>
+
+</html>

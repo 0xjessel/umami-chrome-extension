@@ -1,0 +1,232 @@
+# Umami Analytics Chrome Extension - Technical Implementation Guide
+
+## API Integration
+
+### Authentication
+
+#### For Self-Hosted Umami
+1. Login endpoint: `POST /api/auth/login`
+```json
+{
+  "username": "your-username",
+  "password": "your-password"
+}
+```
+
+2. Store the returned JWT token securely using Chrome's Storage API:
+```javascript
+chrome.storage.sync.set({ 'umami_token': token });
+```
+
+#### For Umami Cloud
+Simply store the API key using Chrome's Storage API:
+```javascript
+chrome.storage.sync.set({ 'umami_api_key': apiKey });
+```
+
+### Required API Endpoints
+
+1. **Active Users** (`GET /api/websites/:websiteId/active`)
+   - Returns number of active users in last 5 minutes
+   - No parameters required
+   - Response format:
+   ```json
+   {
+     "x": 5  // Number of active users
+   }
+   ```
+
+2. **Daily Stats** (`GET /api/websites/:websiteId/stats`)
+   - Parameters:
+     - `startAt`: Today's timestamp in ms
+     - `endAt`: Current timestamp in ms
+   - Response format:
+   ```json
+   {
+     "pageviews": { "value": 3018, "prev": 3508 },
+     "visitors": { "value": 847, "prev": 910 },
+     "visits": { "value": 984, "prev": 1080 }
+   }
+   ```
+
+## Implementation Details
+
+### 1. Extension Structure
+```
+umami-chrome-extension/
+├── manifest.json
+├── background.js
+├── popup/
+│   ├── popup.html
+│   ├── popup.js
+│   └── popup.css
+├── options/
+│   ├── options.html
+│   ├── options.js
+│   └── options.css
+└── src/
+    ├── api.js
+    └── storage.js
+```
+
+### 2. API Client (`src/api.js`)
+```javascript
+class UmamiAPI {
+  constructor() {
+    this.baseUrl = '';
+    this.token = '';
+    this.websiteId = '';
+  }
+
+  async init() {
+    const config = await chrome.storage.sync.get(['baseUrl', 'token', 'websiteId']);
+    this.baseUrl = config.baseUrl;
+    this.token = config.token;
+    this.websiteId = config.websiteId;
+  }
+
+  async getActiveUsers() {
+    const response = await fetch(
+      `${this.baseUrl}/api/websites/${this.websiteId}/active`,
+      {
+        headers: {
+          'Authorization': `Bearer ${this.token}`
+        }
+      }
+    );
+    const data = await response.json();
+    return data.x;
+  }
+
+  async getDailyStats() {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const response = await fetch(
+      `${this.baseUrl}/api/websites/${this.websiteId}/stats?` + 
+      `startAt=${startOfDay.getTime()}&endAt=${now.getTime()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${this.token}`
+        }
+      }
+    );
+    return response.json();
+  }
+}
+```
+
+### 3. Background Service (`background.js`)
+```javascript
+import { UmamiAPI } from './src/api.js';
+
+const POLLING_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const api = new UmamiAPI();
+
+async function updateBadge() {
+  try {
+    const activeUsers = await api.getActiveUsers();
+    chrome.action.setBadgeText({ text: activeUsers.toString() });
+    chrome.action.setBadgeBackgroundColor({ color: '#6366f1' });
+  } catch (error) {
+    console.error('Failed to update badge:', error);
+    chrome.action.setBadgeText({ text: '!' });
+    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+  }
+}
+
+chrome.runtime.onInstalled.addListener(async () => {
+  await api.init();
+  updateBadge();
+  setInterval(updateBadge, POLLING_INTERVAL);
+});
+```
+
+### 4. Storage Schema
+```javascript
+// Chrome Storage Sync Schema
+{
+  // Configuration
+  baseUrl: string,        // Umami server URL
+  token: string,          // JWT token or API key
+  websiteId: string,     // Umami website ID
+  pollingInterval: number, // Update frequency in ms
+
+  // UI Preferences
+  showActiveUsers: boolean,
+  showPageViews: boolean,
+  showVisitors: boolean,
+  badgeMetric: 'active' | 'views' | 'visitors'
+}
+```
+
+### 5. Security Considerations
+
+1. **Token Storage**
+   - Store authentication tokens in `chrome.storage.sync`
+   - Never expose tokens in console logs or error messages
+   - Clear tokens on logout/uninstall
+
+2. **API Requests**
+   - Use HTTPS only
+   - Implement request throttling
+   - Handle API errors gracefully
+   - Validate responses before processing
+
+3. **Permissions**
+   Required permissions in manifest.json:
+   ```json
+   {
+     "permissions": [
+       "storage",
+       "alarms",
+       "host_permissions"
+     ],
+     "host_permissions": [
+       "*://*.umami.is/*",
+       "https://<self-hosted-domain>/*"
+     ]
+   }
+   ```
+
+### 6. Error Handling
+
+1. **Network Errors**
+   - Implement exponential backoff for failed requests
+   - Show clear error messages in popup UI
+   - Cache last successful data fetch
+
+2. **Authentication Errors**
+   - Detect expired/invalid tokens
+   - Prompt user to re-authenticate
+   - Clear invalid credentials
+
+3. **Rate Limiting**
+   - Respect API rate limits
+   - Implement request queuing if needed
+   - Show temporary error state in badge
+
+## Development Setup
+
+1. Clone repository
+2. Install dependencies: `npm install`
+3. Build extension: `npm run build`
+4. Load unpacked extension in Chrome
+5. Configure Umami credentials in options page
+
+## Testing
+
+1. **Unit Tests**
+   - Test API client methods
+   - Test storage operations
+   - Test badge updates
+
+2. **Integration Tests**
+   - Test authentication flow
+   - Test data refresh
+   - Test error scenarios
+
+3. **Manual Testing**
+   - Verify badge updates
+   - Check popup display
+   - Validate options saving
