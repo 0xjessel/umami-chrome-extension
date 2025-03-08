@@ -64,7 +64,10 @@ export class UmamiAPI {
    * Make an authenticated API request
    */
   async makeRequest(endpoint, params = {}, options = {}) {
-    const url = new URL(`${this.baseUrl}${endpoint}`);
+    // Ensure endpoint starts with /api/
+    const apiEndpoint = endpoint.startsWith('/api/') ? endpoint : `/api/${endpoint.startsWith('/') ? endpoint.slice(1) : endpoint}`;
+    const url = new URL(`${this.baseUrl}${apiEndpoint}`);
+
     Object.entries(params).forEach(([key, value]) => {
       // Convert all values to strings to ensure proper URL parameter encoding
       url.searchParams.append(key, value.toString());
@@ -116,8 +119,8 @@ export class UmamiAPI {
     const now = new Date();
     // Create a date at local midnight for the current day
     const startOfDay = new Date(now.toLocaleDateString());
-    
-    return await this.makeRequest(`/api/websites/${this.websiteId}/stats`, {
+
+    return await this.makeRequest(`/websites/${this.websiteId}/stats`, {
       startAt: startOfDay.getTime(),
       endAt: now.getTime()
     });

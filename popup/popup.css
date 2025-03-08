@@ -26,13 +26,14 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   color: var(--text);
   background: var(--background);
-  height: 100%;
+  overflow: hidden;
 }
 
 #app {
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
 }
 
 /* Header */
@@ -142,9 +143,7 @@ h1 {
 /* Main Content */
 main {
   padding: 0.5rem;
-  flex: 1;
   overflow-y: auto;
-  min-height: 0;
 }
 
 /* Stats Grid */
@@ -159,8 +158,9 @@ main {
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   background: var(--background);
-  margin-bottom: 0.5rem;
-  min-height: 75px;
+  height: 80px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .stat-card:last-child {
