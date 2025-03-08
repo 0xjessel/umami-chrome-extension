@@ -16,7 +16,7 @@
     "chrome-extension",
     "web-analytics"
   ],
-  "author": "",
+  "author": "0xjessel",
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.26.9",
