@@ -155,6 +155,39 @@ input[readonly] {
   margin-right: 0.5rem;
 }
 
+/* Password visibility toggle */
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-container input {
+  flex: 1;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-password:hover {
+  color: var(--primary);
+}
+
+.toggle-password svg {
+  width: 20px;
+  height: 20px;
+}
+
 /* Buttons */
 .button-group {
   display: flex;
