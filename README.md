@@ -14,6 +14,20 @@ A Chrome extension that provides real-time analytics from your self-hosted Umami
 - 🌐 Compatible with self-hosted Umami servers
 - 🔌 Simple setup process with connection verification
 
+## Screenshots
+
+### Extension Popup
+
+See the real-time metrics display showing active users, page views, visitors, and visits with trend indicators:
+
+![Extension Popup showing real-time analytics](./screenshots/extension-popup.png)
+
+### Settings Page
+
+Configure your Umami server credentials and display preferences:
+
+![Extension settings page with configuration options](./screenshots/extension-settings.png)
+
 ## Installation
 
 ### Quick Install (Recommended)
