@@ -18,7 +18,6 @@
 
 html, body {
   width: 320px;
-  height: 580px;
   margin: 0;
   padding: 0;
 }
@@ -160,6 +159,12 @@ main {
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   background: var(--background);
+  margin-bottom: 0.5rem;
+  min-height: 75px;
+}
+
+.stat-card:last-child {
+  margin-bottom: 0;
 }
 
 .stat-header {

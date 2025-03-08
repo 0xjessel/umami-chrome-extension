@@ -132,6 +132,18 @@ function showElement(elementToShow) {
     elements.retryButton.classList.remove('hidden');
     elements.refreshButton.classList.add('hidden');
   }
+  
+  // Set appropriate height for different states
+  if (elementToShow === elements.stats) {
+    // For stats, height is handled by adjustPopupHeight()
+    adjustPopupHeight();
+  } else if (elementToShow === elements.setupRequired || elementToShow === elements.errorMessage) {
+    // For setup or error screens, use a fixed compact height
+    document.body.style.height = '200px';
+  } else if (elementToShow === elements.loading) {
+    // For loading screen, use minimal height
+    document.body.style.height = '150px';
+  }
 }
 
 /**
@@ -232,6 +244,9 @@ function updateStatsUI(activeUsers, stats) {
   const formattedTime = formatTime(stats.totaltime.value);
   elements.totalTime.querySelector('.stat-value').textContent = formattedTime;
   updateTrend(elements.totalTime, stats.totaltime.value, stats.totaltime.prev);
+  
+  // Adjust popup height after data is loaded
+  adjustPopupHeight();
 }
 
 /**
@@ -315,6 +330,54 @@ function cleanup() {
 }
 
 /**
+ * Adjust popup height based on visible metrics
+ */
+function adjustPopupHeight() {
+  // Get all visible stat cards
+  const visibleCards = Array.from(document.querySelectorAll('.stat-card'))
+    .filter(card => !card.classList.contains('hidden'));
+  
+  // Calculate needed height - direct measurement for more accuracy
+  const header = document.querySelector('header');
+  const statsContainer = document.getElementById('stats');
+  
+  // Header height includes its margins/padding
+  const headerHeight = header.offsetHeight;
+  const headerStyles = window.getComputedStyle(header);
+  const headerMargins = parseFloat(headerStyles.marginTop) + parseFloat(headerStyles.marginBottom);
+  
+  // Calculate actual metrics container height based on visible cards
+  const cardMargin = 8; // 0.5rem = 8px
+  let statsHeight = 0;
+  
+  // If we have visible cards, calculate height from them
+  if (visibleCards.length > 0) {
+    // Set a minimum number of visible cards (3)
+    const minCards = 3;
+    
+    if (visibleCards.length <= minCards) {
+      // For 1-3 cards, set fixed height that fits 3 cards
+      statsHeight = (75 + cardMargin) * minCards;
+    } else {
+      // For more than 3 cards, calculate exact height needed
+      statsHeight = visibleCards.reduce((total, card) => {
+        return total + card.offsetHeight + cardMargin;
+      }, 0);
+    }
+  } else {
+    // Fallback if no cards are visible (shouldn't happen)
+    statsHeight = 250;
+  }
+  
+  // Add some padding at the bottom
+  const bottomPadding = 10;
+  
+  // Set the body height
+  const totalHeight = headerHeight + headerMargins + statsHeight + bottomPadding;
+  document.body.style.height = `${totalHeight}px`;
+}
+
+/**
  * Initialize popup
  */
 document.addEventListener('DOMContentLoaded', async () => {
@@ -328,6 +391,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!config.showVisits) elements.visits.classList.add('hidden');
   if (!config.showBounces) elements.bounces.classList.add('hidden');
   if (!config.showTotalTime) elements.totalTime.classList.add('hidden');
+  
+  // Adjust height based on visible metrics
+  adjustPopupHeight();
   
   // Show stats container immediately
   showElement(elements.stats);
