@@ -9,8 +9,6 @@ const elements = {
   verifyButton: document.getElementById('verifyButton'),
   resetButton: document.getElementById('resetButton'),
   status: document.getElementById('status'),
-  serverType: document.querySelector('input[name="serverType"]:checked'),
-  cloudAuth: document.getElementById('cloudAuth'),
   selfHostedAuth: document.getElementById('selfHostedAuth'),
   baseUrl: document.getElementById('baseUrl'),
   urlHelp: document.getElementById('urlHelp'),
@@ -36,24 +34,12 @@ async function loadSettings() {
   const config = await StorageManager.getConfig();
   
   // Load credentials
-  // Only set default cloud URL if no URL is saved or if server type is cloud
-  elements.baseUrl.value = config.baseUrl || (config.serverType === 'cloud' ? 'https://cloud.umami.is' : '');
+  elements.baseUrl.value = config.baseUrl || '';
   elements.credentialsForm.querySelector('#websiteId').value = config.websiteId || '';
   
-  // Set server type
-  const serverType = config.serverType || 'cloud';
-  elements.credentialsForm.querySelector(`input[name="serverType"][value="${serverType}"]`).checked = true;
-  
-  // Load auth credentials based on server type
-  if (serverType === 'cloud') {
-    elements.credentialsForm.querySelector('#apiKey').value = config.apiKey || '';
-  } else {
-    elements.credentialsForm.querySelector('#username').value = config.username || '';
-    elements.credentialsForm.querySelector('#password').value = config.password || '';
-  }
-  
-  // Show/hide appropriate auth fields
-  toggleAuthFields(serverType);
+  // Load auth credentials
+  elements.credentialsForm.querySelector('#username').value = config.username || '';
+  elements.credentialsForm.querySelector('#password').value = config.password || '';
 
   // Load display settings
   const badgeMetricInputs = elements.displayForm.querySelectorAll('input[name="badgeMetric"]');
@@ -86,40 +72,6 @@ async function loadSettings() {
 }
 
 /**
- * Toggle authentication fields based on server type
- */
-async function toggleAuthFields(serverType) {
-  const config = await StorageManager.getConfig();
-  if (serverType === 'cloud') {
-    elements.cloudAuth.style.display = 'block';
-    elements.selfHostedAuth.style.display = 'none';
-    // Save the current URL if it's not the cloud URL
-    const currentUrl = elements.baseUrl.value;
-    if (currentUrl && currentUrl !== 'https://cloud.umami.is') {
-      await StorageManager.updateConfig({ lastSelfHostedUrl: currentUrl });
-    }
-    elements.baseUrl.value = 'https://cloud.umami.is';
-    elements.baseUrl.readOnly = true;
-    elements.urlHelp.textContent = 'Using Umami Cloud (https://cloud.umami.is)';
-    // Clear any validation messages since cloud URL is always valid
-    elements.urlValidation.textContent = '';
-    elements.baseUrl.setCustomValidity('');
-  } else {
-    elements.cloudAuth.style.display = 'none';
-    elements.selfHostedAuth.style.display = 'block';
-    // Restore the last used self-hosted URL if available
-    if (config.lastSelfHostedUrl) {
-      elements.baseUrl.value = config.lastSelfHostedUrl;
-    } else if (!config.baseUrl || config.baseUrl === 'https://cloud.umami.is') {
-      elements.baseUrl.value = '';
-    }
-    elements.baseUrl.readOnly = false;
-    elements.urlHelp.textContent = 'Your self-hosted Umami server URL';
-    validateUrl(elements.baseUrl);
-  }
-}
-
-/**
  * Get authentication token for self-hosted server
  */
 async function getSelfHostedToken(baseUrl, username, password) {
@@ -147,9 +99,10 @@ async function saveCredentials(event) {
   event.preventDefault();
   
   const formData = new FormData(event.target);
-  const serverType = formData.get('serverType');
   const baseUrl = formData.get('baseUrl');
   const websiteId = formData.get('websiteId');
+  const username = formData.get('username');
+  const password = formData.get('password');
 
   // Validate URL format
   if (!validateUrl(elements.baseUrl)) {
@@ -158,24 +111,15 @@ async function saveCredentials(event) {
   }
   
   try {
-    let token;
-    if (serverType === 'cloud') {
-      token = formData.get('apiKey');
-    } else {
-      const username = formData.get('username');
-      const password = formData.get('password');
-      token = await getSelfHostedToken(baseUrl, username, password);
-    }
+    const token = await getSelfHostedToken(baseUrl, username, password);
 
     const credentials = {
-      serverType,
+      serverType: 'self-hosted',
       baseUrl,
       token,
       websiteId,
-      // Store these separately for future use
-      apiKey: serverType === 'cloud' ? token : null,
-      username: serverType === 'self-hosted' ? formData.get('username') : null,
-      password: serverType === 'self-hosted' ? formData.get('password') : null
+      username,
+      password
     };
 
     await StorageManager.setCredentials(credentials);
@@ -241,13 +185,14 @@ async function verifyConnection() {
 
   // Get form data first to use latest values
   const formData = new FormData(elements.credentialsForm);
-  const serverType = formData.get('serverType');
   const baseUrl = formData.get('baseUrl');
   const websiteId = formData.get('websiteId');
+  const username = formData.get('username');
+  const password = formData.get('password');
   
   // Create API instance with current form values
   const api = new UmamiAPI();
-  api.serverType = serverType;
+  api.serverType = 'self-hosted';
   api.baseUrl = baseUrl;
 
   if (!websiteId) {
@@ -257,40 +202,13 @@ async function verifyConnection() {
   api.websiteId = websiteId;
 
   try {
-    if (serverType === 'cloud') {
-      api.token = formData.get('apiKey');
-      if (!api.token) {
-        showStatus('API key is required', 'error');
-        return;
-      }
-    } else {
-      const username = formData.get('username');
-      const password = formData.get('password');
-      if (!username || !password) {
-        showStatus('Username and password are required', 'error');
-        return;
-      }
-      api.username = username;
-      api.password = password;
-      await api.authenticate();
-    }
-    const isValid = await api.verifyAuth();
+    // For self-hosted, we need to authenticate
+    const token = await getSelfHostedToken(baseUrl, username, password);
+    api.token = token;
     
-    if (isValid) {
-      // Save credentials since verification succeeded
-      await StorageManager.setCredentials({
-        serverType,
-        baseUrl,
-        token: api.token,
-        websiteId,
-        apiKey: serverType === 'cloud' ? api.token : null,
-        username: serverType === 'self-hosted' ? formData.get('username') : null,
-        password: serverType === 'self-hosted' ? formData.get('password') : null
-      });
-      showStatus('Connection successful', 'success');
-    } else {
-      showStatus('Invalid credentials', 'error');
-    }
+    // Test the connection by fetching active users
+    await api.getActiveUsers();
+    showStatus('Connection verified successfully', 'success');
   } catch (error) {
     showStatus('Connection failed: ' + error.message, 'error');
   }
@@ -300,80 +218,60 @@ async function verifyConnection() {
  * Validate URL format
  */
 function validateUrl(input) {
-  const validationMsg = elements.urlValidation;
-  let url = input.value.trim();
-
-  // Handle empty URL
-  if (!url) {
-    validationMsg.textContent = 'Please enter a URL';
-    input.setCustomValidity('URL is required');
+  // Clear previous validation message
+  elements.urlValidation.textContent = '';
+  
+  // Special case: we no longer need validation for cloud URL
+  if (!input.value) {
+    input.setCustomValidity('Please enter your Umami server URL');
+    elements.urlValidation.textContent = 'Please enter your Umami server URL';
     return false;
   }
-
-  // Check if protocol is present
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    validationMsg.textContent = 'URL must start with http:// or https://';
-    input.setCustomValidity('Missing protocol');
-    return false;
-  }
-
+  
+  // Check if it's a valid URL (has protocol, etc)
   try {
-    // Try to parse the URL to validate it
-    const parsedUrl = new URL(url);
+    const url = new URL(input.value);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      input.setCustomValidity('URL must use http:// or https:// protocol');
+      elements.urlValidation.textContent = 'URL must use http:// or https:// protocol';
+      return false;
+    }
     
-    // Ensure protocol is http or https
-    if (!parsedUrl.protocol.match(/^https?:$/)) {
-      throw new Error('Invalid protocol');
-    }
-
-    // Ensure we have a hostname
-    if (!parsedUrl.hostname) {
-      throw new Error('Missing hostname');
-    }
-
-    // Remove trailing slash from pathname if present
-    if (parsedUrl.pathname.length > 1 && parsedUrl.pathname.endsWith('/')) {
-      parsedUrl.pathname = parsedUrl.pathname.slice(0, -1);
-      url = parsedUrl.toString();
-      input.value = url;
-    }
-
     // URL is valid
-    validationMsg.textContent = '';
     input.setCustomValidity('');
     return true;
   } catch (e) {
-    validationMsg.textContent = 'Please enter a valid URL starting with http:// or https://';
-    input.setCustomValidity('Invalid URL format');
+    // Not a valid URL
+    input.setCustomValidity('Please enter a valid URL');
+    elements.urlValidation.textContent = 'Please enter a valid URL';
     return false;
   }
 }
 
-// Initialize everything when DOM is ready
+// Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
-  // Event Listeners
+  // Load settings
+  loadSettings();
+  
+  // Add event listeners
   elements.credentialsForm.addEventListener('submit', saveCredentials);
   elements.displayForm.addEventListener('submit', saveDisplaySettings);
   elements.verifyButton.addEventListener('click', verifyConnection);
   elements.resetButton.addEventListener('click', resetSettings);
-  // Handle both typing and pasting for URL validation
-  elements.baseUrl.addEventListener('input', (e) => validateUrl(e.target));
+  
+  // Validation
+  elements.baseUrl.addEventListener('input', () => validateUrl(elements.baseUrl));
   elements.baseUrl.addEventListener('paste', (e) => {
     // Use setTimeout to let the paste complete before validation
-    setTimeout(() => validateUrl(e.target), 0);
+    setTimeout(() => validateUrl(elements.baseUrl), 0);
   });
-
-  // Server type change handler
-  document.querySelectorAll('input[name="serverType"]').forEach(radio => {
-    radio.addEventListener('change', async (e) => {
-      try {
-        await toggleAuthFields(e.target.value);
-      } catch (error) {
-        showStatus('Failed to update server type: ' + error.message, 'error');
-      }
-    });
+  
+  // Hide help text on input focus
+  elements.baseUrl.addEventListener('focus', () => {
+    elements.urlHelp.style.opacity = '0.5';
   });
-
-  // Load settings
-  loadSettings();
+  
+  elements.baseUrl.addEventListener('blur', () => {
+    elements.urlHelp.style.opacity = '1';
+  });
 });

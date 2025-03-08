@@ -1,13 +1,12 @@
 /**
  * Umami Analytics API Client
- * Handles all API interactions with Umami server
+ * Handles all API interactions with self-hosted Umami server
  */
 export class UmamiAPI {
   constructor() {
     this.baseUrl = '';
     this.token = '';
     this.websiteId = '';
-    this.serverType = '';
     this.username = '';
     this.password = '';
   }
@@ -20,14 +19,12 @@ export class UmamiAPI {
       throw new Error('Missing required configuration. Please check extension settings.');
     }
 
-    // For self-hosted servers, get a new token if we don't have one
-    if (this.serverType === 'self-hosted' && (!this.token || !await this.verifyAuth())) {
+    // Get a new token if we don't have one or the current one is invalid
+    if (!this.token || !await this.verifyAuth()) {
       if (!this.username || !this.password) {
         throw new Error('Missing credentials for self-hosted server.');
       }
       await this.authenticate();
-    } else if (!this.token) {
-      throw new Error('Missing API key for Umami Cloud.');
     }
   }
 
@@ -86,13 +83,10 @@ export class UmamiAPI {
       });
 
       if (!response.ok) {
-        if (response.status === 401 && this.serverType === 'self-hosted') {
+        if (response.status === 401) {
           // Try to re-authenticate and retry the request
           await this.authenticate();
           return this.makeRequest(endpoint, params, options);
-        }
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please check your credentials.');
         }
         throw new Error(`API request failed: ${response.statusText}`);
       }

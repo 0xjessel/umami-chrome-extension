@@ -42,16 +42,7 @@
         <form id="credentialsForm">
           <div class="form-group">
             <label>Server Type</label>
-            <div class="radio-group">
-              <label class="radio">
-                <input type="radio" name="serverType" value="cloud" checked>
-                <span>Umami Cloud</span>
-              </label>
-              <label class="radio">
-                <input type="radio" name="serverType" value="self-hosted">
-                <span>Self-hosted</span>
-              </label>
-            </div>
+            <div class="help-text">This extension only supports self-hosted Umami servers</div>
           </div>
 
           <div class="form-group">
@@ -61,25 +52,17 @@
                    placeholder="analytics.yourdomain.com"
                    title="Please enter a valid URL starting with http:// or https://">
             <div class="validation-message" id="urlValidation"></div>
-            <div class="help-text" id="urlHelp">Enter the full URL of your Umami server (e.g., https://analytics.yourdomain.com). For Umami Cloud, use https://cloud.umami.is</div>
+            <div class="help-text" id="urlHelp">Enter the full URL of your Umami server (e.g., https://analytics.yourdomain.com)</div>
           </div>
 
-          <div id="cloudAuth" class="form-group">
-            <label for="apiKey">API Key</label>
-            <input type="password" id="apiKey" name="apiKey">
-            <div class="help-text">API key can be found in Settings > Profile > API Keys > Create API Key</div>
-          </div>
-
-          <div id="selfHostedAuth" class="form-group" style="display: none;">
+          <div id="selfHostedAuth" class="form-group">
             <div class="form-group">
               <label for="username">Username</label>
-              <input type="text" id="username" name="username">
-
+              <input type="text" id="username" name="username" required>
             </div>
             <div class="form-group">
               <label for="password">Password</label>
-              <input type="password" id="password" name="password">
-
+              <input type="password" id="password" name="password" required>
             </div>
           </div>
 
