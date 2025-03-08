@@ -99,6 +99,17 @@ select:focus {
   font-weight: 500;
 }
 
+/* Warning text */
+.warning-text {
+  color: var(--danger);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 0.375rem;
+  border-left: 3px solid var(--danger);
+}
+
 /* Radio and Checkbox Groups */
 .radio-group,
 .checkbox-group {

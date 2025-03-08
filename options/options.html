@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Umami Analytics Settings</title>
+  <title>Umami Chrome Extension Settings</title>
   <link href="options.css" rel="stylesheet">
   <style>
     .validation-message {
@@ -32,7 +32,7 @@
 <body>
   <div class="container">
     <header>
-      <h1>Umami Analytics Settings</h1>
+      <h1>Umami Chrome Extension Settings</h1>
     </header>
 
     <main>
@@ -188,9 +188,17 @@
 
           <div class="button-group">
             <button type="submit" class="button primary">Save Settings</button>
-            <button type="button" id="resetButton" class="button danger">Reset to Default</button>
           </div>
         </form>
+      </section>
+
+      <!-- Global Reset Section -->
+      <section class="card">
+        <h2>Reset All Settings</h2>
+        <div class="warning-text">This will reset all settings, including display preferences and Umami server credentials.</div>
+        <div class="button-group">
+          <button type="button" id="resetButton" class="button danger">Reset to Default</button>
+        </div>
       </section>
     </main>
 
