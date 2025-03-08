@@ -10,10 +10,10 @@ export class StorageManager {
     showActiveUsers: true,
     showPageViews: true,
     showVisitors: true,
-    showVisits: false,
+    showVisits: true,
     showBounces: false,
     showTotalTime: false,
-    badgeMetric: 'active',
+    badgeMetric: 'visits',
     serverType: 'self-hosted'
   };
 

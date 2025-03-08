@@ -29,6 +29,32 @@ async function initializeAPI() {
 }
 
 /**
+ * Format large numbers for badge display
+ * Abbreviates numbers with k and m suffixes
+ */
+function formatBadgeNumber(num) {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  }
+  return num.toString();
+}
+
+/**
+ * Format time in minutes for badge display
+ * Returns hours only for clarity (e.g. 78h)
+ */
+function formatBadgeTime(minutes) {
+  if (!minutes) return '0';
+  
+  // For badge, just show hours rounded up for simplicity
+  const hours = Math.ceil(minutes / 60);
+  return hours.toString() + 'h';
+}
+
+/**
  * Update the extension badge with current metrics
  */
 async function updateBadge() {
@@ -42,19 +68,33 @@ async function updateBadge() {
     const config = await StorageManager.getConfig();
     let value = '0';
 
-    switch (config.badgeMetric) {
-      case 'active':
-        value = (await api.getActiveUsers()).toString();
-        break;
-      case 'views': {
-        const stats = await api.getDailyStats();
-        value = stats.pageviews.value.toString();
-        break;
-      }
-      case 'visitors': {
-        const stats = await api.getDailyStats();
-        value = stats.visitors.value.toString();
-        break;
+    if (config.badgeMetric === 'active') {
+      // Active users comes from a different API endpoint
+      const activeUsers = await api.getActiveUsers();
+      value = formatBadgeNumber(activeUsers);
+    } else {
+      // All other metrics come from getDailyStats
+      const stats = await api.getDailyStats();
+      
+      // Map badge metrics to their exact property names in the API response
+      const metricsMap = {
+        'views': 'pageviews',
+        'visitors': 'visitors',
+        'visits': 'visits',
+        'bounces': 'bounces',
+        'totalTime': 'totaltime'  // Note: API uses 'totaltime' (lowercase)
+      };
+      
+      const propName = metricsMap[config.badgeMetric];
+      
+      // Check if the property exists in the response
+      if (propName && stats[propName] && typeof stats[propName].value !== 'undefined') {
+        // Special handling for totaltime (display as hours)
+        if (propName === 'totaltime') {
+          value = formatBadgeTime(stats[propName].value);
+        } else {
+          value = formatBadgeNumber(stats[propName].value);
+        }
       }
     }
 
