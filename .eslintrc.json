@@ -3,7 +3,8 @@
     "browser": true,
     "es2021": true,
     "webextensions": true,
-    "jest": true
+    "jest": true,
+    "node": true
   },
   "extends": [
     "eslint:recommended",
@@ -18,5 +19,16 @@
     "no-unused-vars": "warn",
     "prefer-const": "error",
     "eqeqeq": "error"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["webpack.config.js", "babel.config.js", "jest.config.js"],
+      "env": {
+        "node": true
+      },
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ]
 }

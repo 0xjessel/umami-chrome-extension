@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Umami Analytics</title>
-  <link href="popup.css" rel="stylesheet">
+  <!-- CSS is injected by webpack during build process -->
 </head>
 
 <body>
@@ -14,9 +14,7 @@
     <header>
       <div class="header-title">
         <img src="../icons/icon16.png" alt="Umami Logo" class="header-logo">
-        <h1 id="serverName"
-          style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0;">
-          Umami Server</h1>
+        <h1 id="serverName"></h1>
       </div>
       <div class="header-buttons">
         <button id="retryButton" title="Retry" class="hidden">

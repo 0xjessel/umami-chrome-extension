@@ -1,0 +1,436 @@
+# Chrome Extension Development Guide: Manifest V3
+
+## Introduction
+
+This guide provides information about building, packing, and distributing Chrome extensions using Manifest V3, which is now the required format for all new Chrome extensions. Manifest V3 introduces significant changes from Manifest V2, with a focus on security, privacy, and performance.
+
+## Manifest V3 Constraints and Requirements
+
+### Key Changes from Manifest V2
+
+1. **Content Security Policy (CSP) Restrictions**
+
+   - `unsafe-eval` and `unsafe-inline` are no longer allowed in the CSP
+   - This prevents the use of `eval()`, `new Function()`, inline scripts, and event handlers with string arguments
+   - Extensions must use safer alternatives for dynamic code execution
+
+2. **Background Scripts**
+
+   - Service Workers replace persistent background pages
+   - Service Workers are event-driven and can be terminated when idle
+   - No DOM access in Service Workers
+
+3. **APIs and Permissions**
+   - Increased declaration requirements for host permissions
+   - More granular permission model
+   - Some APIs have been removed or modified
+
+### Content Security Policy Constraints
+
+The most significant constraint for many developers is the CSP restriction. In Manifest V3:
+
+```json
+"content_security_policy": {
+  "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+}
+```
+
+- `'unsafe-eval'` is **not allowed** (prevents using `eval()`, `new Function()`, etc.)
+- `'unsafe-inline'` is **not allowed** (prevents inline scripts)
+- `'wasm-unsafe-eval'` is allowed for WebAssembly
+- Only scripts from the extension's own package can be loaded (`'self'`)
+
+## Building a Chrome Extension with Manifest V3
+
+### Project Structure
+
+A typical Manifest V3 extension has the following structure:
+
+```
+extension/
+├── manifest.json
+├── background.js  (Service Worker)
+├── popup/
+│   ├── popup.html
+│   ├── popup.js
+│   └── popup.css
+├── options/
+│   ├── options.html
+│   ├── options.js
+│   └── options.css
+└── icons/
+    ├── icon16.png
+    ├── icon32.png
+    ├── icon48.png
+    └── icon128.png
+```
+
+### Manifest.json Example
+
+```json
+{
+  "manifest_version": 3,
+  "name": "Extension Name",
+  "version": "1.0.0",
+  "description": "Extension description",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["storage", "alarms"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src *"
+  }
+}
+```
+
+## Building with Modern Tools (Webpack, Babel)
+
+When using modern build tools like Webpack and Babel, special considerations are needed to comply with Manifest V3 CSP restrictions:
+
+### Webpack Configuration
+
+```javascript
+// webpack.config.js
+module.exports = {
+  // Use a source map that doesn't require eval
+  devtool: 'nosources-source-map',
+
+  // For ES modules
+  experiments: {
+    outputModule: true,
+  },
+
+  output: {
+    // Support ES modules
+    module: true,
+    publicPath: './', // Critical for correct asset path resolution in extensions
+    environment: {
+      arrowFunction: true,
+      const: true,
+      destructuring: true,
+      dynamicImport: true,
+      forOf: true,
+      module: true,
+    },
+  },
+
+  // HTML handling - preserve type="module" attributes
+  module: {
+    rules: [
+      {
+        test: /\.html$/,
+        use: [
+          {
+            loader: 'html-loader',
+            options: {
+              minimize: {
+                removeScriptTypeAttributes: false,
+                collapseWhitespace: true,
+                removeComments: true,
+              },
+            },
+          },
+        ],
+      },
+    ],
+  },
+
+  // Configure plugins to preserve ES module compatibility
+  plugins: [
+    new HtmlWebpackPlugin({
+      minify: {
+        removeScriptTypeAttributes: false, // Keep script type attributes
+      },
+    }),
+
+    // Extract CSS into separate files
+    new MiniCssExtractPlugin({
+      filename: '[name].css', // Outputs CSS files to dist root for proper loading
+    }),
+  ],
+
+  // Ensure Terser doesn't use unsafe transformations
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          ecma: 2020,
+          module: true,
+          compress: {
+            drop_console: true, // Remove all console logs for cleaner production code
+            passes: 2,
+          },
+        },
+      }),
+    ],
+  },
+};
+```
+
+### Babel Configuration
+
+```javascript
+// babel.config.js
+module.exports = {
+  presets: [
+    [
+      '@babel/preset-env',
+      {
+        targets: {
+          chrome: '90', // Target modern Chrome browsers
+        },
+        useBuiltIns: false, // Don't use polyfills that might require eval
+        modules: false, // Let webpack handle modules
+      },
+    ],
+  ],
+};
+```
+
+### Importing CSS in JavaScript Files
+
+For proper CSS processing with webpack, import CSS files directly in your JavaScript files:
+
+```javascript
+// In popup.js
+import './popup.css'; // This ensures webpack processes the CSS
+
+// In options.js
+import './options.css'; // This ensures webpack processes the CSS
+```
+
+And remove direct CSS links from HTML files:
+
+```html
+<!-- In popup.html and options.html -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Extension Name</title>
+  <!-- CSS is injected by webpack during build process -->
+</head>
+```
+
+This approach ensures webpack can properly process and bundle your CSS files, making them consistent with the Content Security Policy.
+
+## Common Issues and Solutions
+
+### CSP Violations
+
+**Problem**: Code bundled with Webpack or other build tools may use `eval()` internally, causing CSP violations.
+
+**Solutions**:
+
+1. Configure Webpack to use non-eval source maps (`devtool: 'nosources-source-map'`)
+2. Set `experiments.outputModule: true` and `output.module: true` in Webpack config
+3. Configure Babel to target modern browsers and avoid unnecessary polyfills
+4. Use ES modules (`type="module"`) in your HTML files
+5. Configure HTML processing to preserve script type attributes
+6. Configure Terser to use safe JavaScript transformations
+
+### Avoiding Dynamic Code Execution
+
+**Problem**: Features that require dynamic code execution (like `eval()`) are not allowed in Manifest V3.
+
+**Solution**: With proper configuration, you can avoid the need for dynamic code execution:
+
+1. **Instead of dynamic imports with strings:**
+
+   ```javascript
+   // Don't do this - may require eval
+   const moduleName = 'some-module';
+   import(moduleName);
+
+   // Do this instead - static import
+   import * as module1 from './module1.js';
+   import * as module2 from './module2.js';
+
+   const modules = { module1, module2 };
+   const selectedModule = modules[moduleName];
+   ```
+
+2. **Instead of JSON parsing with eval:**
+
+   ```javascript
+   // Always use the native JSON parser
+   const data = JSON.parse(jsonString);
+   ```
+
+3. **Instead of string-based template compilation:**
+   ```javascript
+   // Pre-compile your templates or use DOM-based approaches
+   const template = document.createElement('template');
+   template.innerHTML = '<div>Hello ${name}</div>';
+   const node = template.content.cloneNode(true);
+   node.firstChild.textContent = node.firstChild.textContent.replace('${name}', userName);
+   ```
+
+With proper Webpack and Babel configurations, you can build modern extensions without needing workarounds for CSP restrictions.
+
+### CSS Loading Issues
+
+**Problem**: CSS files may not load correctly in the packaged extension, resulting in unstyled UI elements.
+
+**Solutions**:
+
+1. **Import CSS in JavaScript**: Import CSS files directly in your JavaScript entry points
+
+   ```javascript
+   // At the top of your entry point JS files
+   import './styles.css';
+   ```
+
+2. **Proper webpack configuration**: Use correct MiniCssExtractPlugin settings and output paths
+
+   ```javascript
+   // In webpack.config.js
+   output: {
+     publicPath: './', // Critical for correct asset resolution
+   },
+   plugins: [
+     new MiniCssExtractPlugin({
+       filename: '[name].css' // Use simple naming without nested paths
+     }),
+   ]
+   ```
+
+3. **Remove manual CSS links**: Let webpack handle CSS injection instead of manually linking CSS in HTML
+
+   ```html
+   <!-- Don't include direct CSS links in HTML files -->
+   <link href="./styles.css" rel="stylesheet" />
+   <!-- Remove this -->
+
+   <!-- Instead, add a comment for clarity -->
+   <!-- CSS is injected by webpack during build process -->
+   ```
+
+4. **Avoid copying CSS with CopyWebpackPlugin**: Let MiniCssExtractPlugin handle all CSS processing
+   ```javascript
+   // Don't include CSS files in copy patterns
+   new CopyPlugin({
+     patterns: [
+       { from: 'assets', to: 'assets' }, // Okay for other assets
+       // Don't include CSS here
+     ],
+   });
+   ```
+
+## Packing and Distribution
+
+### Building for Production
+
+```bash
+# Clean build
+npm run build:clean
+
+# Create zip file for distribution
+npm run build:pack
+```
+
+### Extension Distribution Channels
+
+1. **Chrome Web Store** (Recommended)
+
+   - Official distribution channel
+   - Required for most users to install your extension
+   - Provides automatic updates
+   - Review process can take several days
+
+2. **Enterprise Deployment**
+
+   - For internal corporate use
+   - Can be deployed via group policy
+   - Requires enterprise enrollment
+
+3. **Developer Mode** (For testing only)
+   - Load unpacked extension
+   - Not suitable for distribution
+
+### Chrome Web Store Requirements
+
+1. **Privacy Policy**
+
+   - Required if your extension collects any user data
+   - Must be accessible from the extension and the store listing
+
+2. **Permissions Justification**
+
+   - Be prepared to explain why each permission is needed
+   - Minimize the number of permissions requested
+
+3. **Store Assets**
+
+   - High-quality icon (128x128 PNG)
+   - At least 1-3 screenshots (1280x800 or 640x400)
+   - Promotional images (optional but recommended)
+   - Detailed description
+
+4. **Code Requirements**
+   - Code must be obfuscated/minified in a way that doesn't prevent review
+   - Third-party libraries must be identifiable or documented
+   - No external code loading outside of declared domains
+
+## Best Practices
+
+1. **Security**
+
+   - Follow the principle of least privilege for permissions
+   - Validate all user inputs
+   - Use strong CSP directives
+   - Avoid storing sensitive data in local storage
+
+2. **Performance**
+
+   - Keep background service workers lightweight
+   - Use event-driven patterns
+   - Optimize asset sizes
+   - Cache data when appropriate
+   - Remove console logs in production builds (`drop_console: true` in Terser configuration)
+
+3. **User Experience**
+
+   - Clear, simple UI with consistent design
+   - Responsive to different window sizes
+   - Accessibility considerations
+   - Internationalization support
+
+4. **Maintenance**
+   - Version your API calls
+   - Plan for Manifest updates
+   - Monitor for deprecated APIs
+   - Test across different Chrome versions
+
+## Conclusion
+
+Building Chrome extensions with Manifest V3 requires careful attention to security constraints, particularly around Content Security Policy. By following the best practices outlined in this guide, you can create extensions that are secure, performant, and compliant with Chrome Web Store requirements.
+
+With proper configuration of build tools like Webpack and Babel, you can avoid the need for workarounds like shims or custom loaders, while still leveraging modern JavaScript features in your extension.
+
+## Additional Resources
+
+- [Chrome Developer Documentation](https://developer.chrome.com/docs/extensions/)
+- [Manifest V3 Migration Guide](https://developer.chrome.com/docs/extensions/mv3/intro/mv3-migration/)
+- [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole/)
+- [Content Security Policy](https://developer.chrome.com/docs/extensions/mv3/manifest/content_security_policy/)

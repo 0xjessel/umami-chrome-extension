@@ -5,28 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Umami Analytics</title>
-  <link href="options.css" rel="stylesheet">
-  <style>
-    .validation-message {
-      font-size: 0.875rem;
-      color: var(--danger);
-      margin-top: 0.25rem;
-      display: none;
-    }
-
-    .validation-message:not(:empty) {
-      display: block;
-      margin-top: 0.25rem;
-    }
-
-    input:invalid {
-      border-color: var(--danger);
-    }
-
-    input:invalid:focus {
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-    }
-  </style>
+  <!-- CSS is injected by webpack during build process -->
 </head>
 
 <body>
@@ -53,7 +32,7 @@
           <div id="selfHostedAuth" class="form-group">
             <div class="form-group">
               <label for="username">Username</label>
-              <input type="text" id="username" name="username" required>
+              <input type="text" id="username" name="username" class="text-input" required>
             </div>
             <div class="form-group">
               <label for="password">Password</label>
@@ -71,7 +50,7 @@
 
           <div class="form-group">
             <label for="websiteId">Website ID</label>
-            <input type="text" id="websiteId" name="websiteId" required placeholder="71b28330-985c-42bd-9952-d32d7a3c240e">
+            <input type="text" id="websiteId" name="websiteId" class="text-input" required placeholder="71b28330-985c-42bd-9952-d32d7a3c240e">
             <div class="help-text">Website ID can be found in Settings > Websites > yourwebsite.com > Edit > Details</div>
           </div>
 
@@ -202,6 +181,14 @@
 
       <!-- Global Reset Section -->
       <section class="card">
+        <h2>Debug Tools</h2>
+        <div class="button-group">
+          <button type="button" id="updateBadgeButton" class="button primary">Update Badge</button>
+        </div>
+      </section>
+
+      <!-- Global Reset Section -->
+      <section class="card">
         <h2>Reset All Settings</h2>
         <div class="warning-text">This will reset all settings, including display preferences and Umami server credentials.</div>
         <div class="button-group">
@@ -223,10 +210,7 @@
       <span class="creator-text">created by <a href="https://github.com/0xjessel" target="_blank" rel="noopener noreferrer"><strong>0xjessel</strong></a></span>
     </footer>
   </div>
-  <script type="module" src="../src/constants.js"></script>
-  <script type="module" src="../src/api.js"></script>
-  <script type="module" src="../src/storage.js"></script>
-  <script type="module" src="options.js"></script>
+  <!-- JavaScript is injected by webpack during build process -->
 </body>
 
 </html>

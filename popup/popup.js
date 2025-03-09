@@ -1,5 +1,6 @@
 import { StorageManager } from '../src/storage.js';
 import { UmamiAPI } from '../src/api.js';
+import './popup.css';
 
 // Prevent multiple simultaneous updates
 let isUpdating = false;

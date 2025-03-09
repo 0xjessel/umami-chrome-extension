@@ -11,6 +11,10 @@ module.exports = {
     ignored: /node_modules/,
     aggregateTimeout: 300,
   },
+  devtool: 'nosources-source-map',
+  experiments: {
+    outputModule: true
+  },
   entry: {
     background: './background.js',
     popup: './popup/popup.js',
@@ -19,7 +23,18 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].js',
-    clean: true
+    clean: true,
+    module: true,
+    publicPath: './', // Ensures assets use relative paths for consistent loading in extension context
+    environment: {
+      arrowFunction: true,
+      bigIntLiteral: false,
+      const: true,
+      destructuring: true,
+      dynamicImport: true,
+      forOf: true,
+      module: true
+    }
   },
   module: {
     rules: [
@@ -36,6 +51,22 @@ module.exports = {
       {
         test: /\.css$/,
         use: [MiniCssExtractPlugin.loader, 'css-loader']
+      },
+      // Ensure HTML files preserve ES module scripts
+      {
+        test: /\.html$/,
+        use: [
+          {
+            loader: 'html-loader',
+            options: {
+              minimize: {
+                removeScriptTypeAttributes: false, // Preserve script type attributes
+                collapseWhitespace: true,
+                removeComments: true
+              }
+            }
+          }
+        ]
       }
     ]
   },
@@ -56,7 +87,6 @@ module.exports = {
           filter: (resourcePath) => resourcePath.endsWith('.png')
         },
         // Only copy essential source files that are actually needed at runtime
-        // Consider importing needed modules directly in JS instead of copying entire src directory
         { 
           from: 'src',
           to: 'src',
@@ -75,8 +105,7 @@ module.exports = {
         collapseWhitespace: true,
         removeComments: true,
         removeRedundantAttributes: true,
-        removeScriptTypeAttributes: true,
-        removeStyleLinkTypeAttributes: true,
+        removeScriptTypeAttributes: false,
         useShortDoctype: true
       }
     }),
@@ -88,13 +117,12 @@ module.exports = {
         collapseWhitespace: true,
         removeComments: true,
         removeRedundantAttributes: true,
-        removeScriptTypeAttributes: true,
-        removeStyleLinkTypeAttributes: true,
+        removeScriptTypeAttributes: false,
         useShortDoctype: true
       }
     }),
     new MiniCssExtractPlugin({
-      filename: '[name].css'
+      filename: '[name].css'  // Outputs CSS files directly in dist root for proper loading
     })
   ],
   optimization: {
@@ -102,10 +130,16 @@ module.exports = {
       new TerserPlugin({
         terserOptions: {
           compress: {
-            drop_console: false, // Set to true in production to remove console logs
+            drop_console: true, // Remove all console logs in production builds
             passes: 2
           },
-          mangle: true
+          mangle: true,
+          // Ensure Terser doesn't use unsafe transformations
+          ecma: 2020,
+          module: true,
+          toplevel: true,
+          keep_classnames: false,
+          keep_fnames: false
         }
       })
     ],

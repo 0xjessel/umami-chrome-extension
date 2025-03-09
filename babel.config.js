@@ -4,8 +4,10 @@ module.exports = {
       '@babel/preset-env',
       {
         targets: {
-          node: 'current'
-        }
+          chrome: "90" // Target modern Chrome browsers
+        },
+        useBuiltIns: false, // Don't use polyfills that might require eval
+        modules: false // Let webpack handle modules
       }
     ]
   ]

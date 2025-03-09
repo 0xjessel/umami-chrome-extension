@@ -1,3 +1,5 @@
+import './options.css';
+
 import { StorageManager } from '../src/storage.js';
 import { POLLING_INTERVALS, DEFAULT_POLLING_INTERVAL } from '../src/constants.js';
 import { UmamiAPI } from '../src/api.js';
@@ -301,4 +303,70 @@ document.addEventListener('DOMContentLoaded', () => {
   elements.baseUrl.addEventListener('blur', () => {
     elements.urlHelp.style.opacity = '1';
   });
+});
+
+// Add event listener for update badge button
+document.getElementById('updateBadgeButton').addEventListener('click', async () => {
+  try {
+    showStatus('Requesting badge update...', 'success');
+    
+    // Check if service worker is available
+    if (!chrome.runtime?.id) {
+      throw new Error('Extension context invalid or unavailable');
+    }
+    
+    // Send message with proper error handling
+    const response = await new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({ type: 'UPDATE_BADGE' }, (response) => {
+        // Check for error
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message || 'Failed to communicate with background service'));
+          return;
+        }
+        resolve(response || { success: true });
+      });
+    });
+    
+    if (response.success) {
+      showStatus('Badge update successful!', 'success');
+    } else {
+      showStatus('Badge update completed with warnings', 'warning');
+    }
+  } catch (error) {
+    console.error('Badge update error:', error);
+    showStatus('Badge update failed: ' + error.message, 'error');
+  }
+});
+
+// Setup keep-alive port to background service worker
+let keepAlivePort;
+
+function setupKeepAliveConnection() {
+  try {
+    // Close existing connection if any
+    if (keepAlivePort) {
+      keepAlivePort.disconnect();
+    }
+    
+    // Create new connection
+    keepAlivePort = chrome.runtime.connect({ name: 'keepAlive' });
+    
+    // If the port disconnects, try to reconnect
+    keepAlivePort.onDisconnect.addListener(() => {
+      // Wait a bit before reconnecting to avoid rapid reconnection attempts
+      setTimeout(setupKeepAliveConnection, 1000);
+    });
+    
+    // Connection established (console log removed)
+  } catch (error) {
+    // Failed to establish connection (console error removed)
+    // Try again later
+    setTimeout(setupKeepAliveConnection, 5000);
+  }
+}
+
+// Start keep-alive when options page loads
+document.addEventListener('DOMContentLoaded', () => {
+  loadSettings();
+  setupKeepAliveConnection();
 });
