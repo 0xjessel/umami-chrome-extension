@@ -14,7 +14,7 @@ module.exports = {
   },
   devtool: 'nosources-source-map',
   experiments: {
-    outputModule: true
+    outputModule: false
   },
   entry: {
     background: './background.js',
@@ -40,7 +40,7 @@ module.exports = {
       }
     },
     clean: true,
-    module: true,
+    module: false,
     environment: {
       arrowFunction: true,
       bigIntLiteral: false,
@@ -48,7 +48,7 @@ module.exports = {
       destructuring: true,
       dynamicImport: true,
       forOf: true,
-      module: true
+      module: false
     }
   },
   module: {

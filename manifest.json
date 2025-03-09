@@ -27,8 +27,7 @@
     }
   },
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   "options_ui": {
     "page": "options/options.html",
