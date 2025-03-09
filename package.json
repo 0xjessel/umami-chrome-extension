@@ -5,6 +5,8 @@
   "private": true,
   "scripts": {
     "build": "webpack --mode production",
+    "build:clean": "rm -rf dist && webpack --mode production",
+    "build:pack": "npm run build:clean && cd dist && zip -r ../umami-chrome-extension.zip *",
     "dev": "webpack --mode development --watch",
     "lint": "eslint src/**/*.js popup/**/*.js options/**/*.js background.js",
     "format": "prettier --write \"**/*.{js,json,css,html,md}\"",
@@ -35,6 +37,7 @@
     "mini-css-extract-plugin": "^2.9.2",
     "prettier": "^3.5.3",
     "sharp": "^0.33.5",
+    "terser-webpack-plugin": "^5.3.14",
     "webpack": "^5.98.0",
     "webpack-cli": "^5.1.4"
   },

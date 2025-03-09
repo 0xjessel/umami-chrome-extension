@@ -56,9 +56,14 @@ npm install
 3. Build the extension:
 
 ```bash
-npm run build  # For production build
-# or
-npm run dev    # For development with hot reload
+# Build using the optimized build script
+./build.sh --clean  # Clean build for development
+
+# For production build with automatic packaging
+./build.sh --clean --pack  # Creates a .zip file ready for distribution
+
+# For development with hot reload
+npm run dev
 ```
 
 4. Load in Chrome:
@@ -99,17 +104,39 @@ npm install
 
 ```bash
 npm run dev
+# or
+./build.sh --dev
 ```
 
 3. Load unpacked extension from the `dist` directory
 
 ### Available Scripts
 
-- `npm run build` - Production build
+- `./build.sh --clean` - Clean build for development (recommended)
+- `./build.sh --clean --pack` - Create production build + zip package for distribution
+- `./build.sh --dev` - Development build with optimizations disabled
+- `./build.sh --stats` - Generate bundle stats for analysis
+- `npm run build` - Production build using npm
+- `npm run build:clean` - Clean production build using npm
+- `npm run build:pack` - Create zip package for distribution using npm
 - `npm run dev` - Development build with watch mode
 - `npm run lint` - Lint JavaScript files
 - `npm run format` - Format code with Prettier
 - `npm test` - Run tests
+
+### Build Script Options
+
+The included `build.sh` script provides several options:
+
+```
+Usage: ./build.sh [options]
+Options:
+  -h, --help     Display help message
+  -d, --dev      Build development version (unminified)
+  -c, --clean    Clean build (remove dist directory first)
+  -p, --pack     Package extension as zip file after building
+  -s, --stats    Display webpack bundle stats analysis
+```
 
 ### Project Structure
 
@@ -183,6 +210,12 @@ This extension is not officially affiliated with Umami but was built with apprec
    - Verify your polling interval settings
 
 3. **Extension showing no data**
+
    - Confirm you have active traffic on your website
    - Check if your Umami server is collecting data properly
    - Try reopening the popup
+
+4. **Extension size is large when loading unpacked**
+   - Make sure to load ONLY the `dist` directory when using "Load unpacked"
+   - The full project directory includes development dependencies that are not needed for the extension
+   - Use `./build.sh --clean` before loading the extension
