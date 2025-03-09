@@ -9,6 +9,8 @@ build/
 *.zip
 *.crx
 *.pem
+umami-chrome-extension/
+umami-chrome-extension.zip
 
 # Development
 .env

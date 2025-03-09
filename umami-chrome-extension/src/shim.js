@@ -1,1 +1,0 @@
-export function safeJSONParse(r){try{return JSON.parse(r)}catch(r){return console.error("Error parsing JSON:",r),null}}export function safeImport(r){return new Promise(((o,e)=>{try{import(r).then((r=>o(r))).catch((r=>{console.error("Error importing module:",r),e(r)}))}catch(r){console.error("Error with import:",r),e(r)}}))}
