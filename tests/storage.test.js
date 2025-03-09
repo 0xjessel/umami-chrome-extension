@@ -53,7 +53,6 @@ describe('StorageManager', () => {
 
   describe('setCredentials', () => {
     const validCredentials = {
-      serverType: 'self-hosted',
       baseUrl: 'https://analytics.example.com',
       token: 'test-token',
       websiteId: 'test-website-id',
@@ -65,19 +64,18 @@ describe('StorageManager', () => {
       await StorageManager.setCredentials(validCredentials);
       
       expect(chrome.storage.sync.set).toHaveBeenCalledWith({
-        serverType: validCredentials.serverType,
+        serverType: 'self-hosted',
         baseUrl: validCredentials.baseUrl,
         token: validCredentials.token,
         websiteId: validCredentials.websiteId,
         username: validCredentials.username,
         password: validCredentials.password,
-        apiKey: undefined
+        displayName: 'analytics.example.com'
       });
     });
 
     it('should trim credential values', async () => {
       const untrimmedCredentials = {
-        serverType: 'self-hosted',
         baseUrl: '  https://analytics.example.com  ',
         token: '  test-token  ',
         websiteId: '  test-website-id  ',
@@ -88,20 +86,20 @@ describe('StorageManager', () => {
       await StorageManager.setCredentials(untrimmedCredentials);
       
       expect(chrome.storage.sync.set).toHaveBeenCalledWith({
-        serverType: untrimmedCredentials.serverType,
+        serverType: 'self-hosted',
         baseUrl: untrimmedCredentials.baseUrl.trim(),
         token: untrimmedCredentials.token.trim(),
         websiteId: untrimmedCredentials.websiteId.trim(),
         username: untrimmedCredentials.username.trim(),
         password: untrimmedCredentials.password.trim(),
-        apiKey: undefined
+        displayName: 'analytics.example.com'
       });
     });
 
     it('should throw error for missing credentials', async () => {
       const invalidCredentials = {
         baseUrl: 'https://analytics.example.com',
-        // missing token and websiteId
+        // missing token, websiteId, username, and password
       };
 
       await expect(StorageManager.setCredentials(invalidCredentials))
@@ -115,11 +113,9 @@ describe('StorageManager', () => {
       await StorageManager.clearCredentials();
       
       expect(chrome.storage.sync.remove).toHaveBeenCalledWith([
-        'serverType',
         'baseUrl',
         'token',
         'websiteId',
-        'apiKey',
         'username',
         'password'
       ]);
@@ -129,11 +125,11 @@ describe('StorageManager', () => {
   describe('hasCredentials', () => {
     it('should return true when all credentials exist', async () => {
       chrome.storage.sync.get.mockResolvedValue({
-        serverType: 'cloud',
         baseUrl: 'https://analytics.example.com',
         token: 'test-token',
         websiteId: 'test-website-id',
-        apiKey: 'test-api-key'
+        username: 'test-user',
+        password: 'test-pass'
       });
 
       const result = await StorageManager.hasCredentials();
@@ -143,8 +139,10 @@ describe('StorageManager', () => {
     it('should return false when any credential is missing', async () => {
       chrome.storage.sync.get.mockResolvedValue({
         baseUrl: 'https://analytics.example.com',
-        token: 'test-token'
-        // missing websiteId
+        token: 'test-token',
+        websiteId: 'test-website-id',
+        username: 'test-user'
+        // missing password
       });
 
       const result = await StorageManager.hasCredentials();
