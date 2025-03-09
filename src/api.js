@@ -102,8 +102,61 @@ export class UmamiAPI {
    * Get number of active users in last 5 minutes
    */
   async getActiveUsers() {
-    const data = await this.makeRequest(`/api/websites/${this.websiteId}/active`);
-    return data.x;
+    const endpoint = `/api/websites/${this.websiteId}/active`;
+    const data = await this.makeRequest(endpoint);
+    
+    // Handle all possible response formats in a robust way
+    try {
+      // Case 1: Direct number response
+      if (typeof data === 'number') {
+        return data;
+      }
+      
+      // Case 2: String that can be parsed as number
+      if (typeof data === 'string' && !isNaN(Number(data))) {
+        return Number(data);
+      }
+      
+      // Case 3: Object with a 'visitors' property (observed format)
+      if (data && typeof data === 'object' && 'visitors' in data) {
+        const visitors = data.visitors;
+        if (typeof visitors === 'number') {
+          return visitors;
+        }
+        if (typeof visitors === 'string' && !isNaN(Number(visitors))) {
+          return Number(visitors);
+        }
+      }
+      
+      // Case 4: Object with an 'x' property (alternative format)
+      if (data && typeof data === 'object' && 'x' in data) {
+        const x = data.x;
+        if (typeof x === 'number') {
+          return x;
+        }
+        if (typeof x === 'string' && !isNaN(Number(x))) {
+          return Number(x);
+        }
+      }
+      
+      // Case 5: Look for the first numeric property in the response
+      if (data && typeof data === 'object') {
+        for (const key in data) {
+          const value = data[key];
+          if (typeof value === 'number') {
+            return value;
+          }
+          if (typeof value === 'string' && !isNaN(Number(value))) {
+            return Number(value);
+          }
+        }
+      }
+      
+      // Fallback for unexpected formats
+      return 0;
+    } catch (error) {
+      return 0;
+    }
   }
 
   /**
@@ -114,7 +167,7 @@ export class UmamiAPI {
     // Create a date at local midnight for the current day
     const startOfDay = new Date(now.toLocaleDateString());
 
-    return await this.makeRequest(`/websites/${this.websiteId}/stats`, {
+    return await this.makeRequest(`/api/websites/${this.websiteId}/stats`, {
       startAt: startOfDay.getTime(),
       endAt: now.getTime()
     });

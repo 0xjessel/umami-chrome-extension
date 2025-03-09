@@ -33,13 +33,19 @@ async function initializeAPI() {
  * Abbreviates numbers with k and m suffixes
  */
 function formatBadgeNumber(num) {
+  // Handle null/undefined/NaN values
+  if (num === null || num === undefined || isNaN(num)) {
+    return '0';
+  }
+  
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   }
   if (num >= 1000) {
     return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   }
-  return num.toString();
+  // Explicitly handle any type by converting to String safely
+  return String(num);
 }
 
 /**
@@ -58,52 +64,111 @@ function formatBadgeTime(minutes) {
  * Update the extension badge with current metrics
  */
 async function updateBadge() {
-  if (!api && !(await initializeAPI())) {
-    chrome.action.setBadgeText({ text: '!' });
-    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
-    return;
-  }
-
   try {
-    const config = await StorageManager.getConfig();
-    let value = '0';
-
-    if (config.badgeMetric === 'active') {
-      // Active users comes from a different API endpoint
-      const activeUsers = await api.getActiveUsers();
-      value = formatBadgeNumber(activeUsers);
-    } else {
-      // All other metrics come from getDailyStats
-      const stats = await api.getDailyStats();
-      
-      // Map badge metrics to their exact property names in the API response
-      const metricsMap = {
-        'views': 'pageviews',
-        'visitors': 'visitors',
-        'visits': 'visits',
-        'bounces': 'bounces',
-        'totalTime': 'totaltime'  // Note: API uses 'totaltime' (lowercase)
-      };
-      
-      const propName = metricsMap[config.badgeMetric];
-      
-      // Check if the property exists in the response
-      if (propName && stats[propName] && typeof stats[propName].value !== 'undefined') {
-        // Special handling for totaltime (display as hours)
-        if (propName === 'totaltime') {
-          value = formatBadgeTime(stats[propName].value);
-        } else {
-          value = formatBadgeNumber(stats[propName].value);
-        }
-      }
+    // First check if API needs initialization
+    if (!api && !(await initializeAPI())) {
+      chrome.action.setBadgeText({ text: '!' });
+      chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+      return;
     }
 
-    chrome.action.setBadgeText({ text: value });
-    chrome.action.setBadgeBackgroundColor({ color: '#6366f1' });
+    const config = await StorageManager.getConfig();
+    // Default badge value
+    let value = '0';
+    let rawValue = 0;
+
+    // Get the appropriate metric value based on badge metric setting
+    if (config.badgeMetric === 'active') {
+      // Active users comes from a different API endpoint
+      try {
+        rawValue = await api.getActiveUsers();
+        
+        // Ensure value is a number
+        if (rawValue === null || rawValue === undefined || isNaN(rawValue)) {
+          rawValue = 0;
+        }
+        
+        // Try to convert to a number if it's not already
+        if (typeof rawValue !== 'number') {
+          rawValue = Number(rawValue) || 0;
+        }
+      } catch (apiError) {
+        rawValue = 0;
+      }
+    } else {
+      // All other metrics come from getDailyStats
+      try {
+        const stats = await api.getDailyStats();
+        
+        // Map badge metrics to their exact property names in the API response
+        const metricsMap = {
+          'views': 'pageviews',
+          'visitors': 'visitors',
+          'visits': 'visits',
+          'bounces': 'bounces',
+          'totalTime': 'totaltime'  // Note: API uses 'totaltime' (lowercase)
+        };
+        
+        const metricKey = metricsMap[config.badgeMetric];
+        
+        // Get the raw value if the data structure is valid
+        if (metricKey && stats && stats[metricKey] && 
+            stats[metricKey].value !== undefined) {
+          rawValue = stats[metricKey].value;
+          
+          // Ensure value is a number (except for totalTime)
+          if (metricKey !== 'totaltime' && (rawValue === null || rawValue === undefined || isNaN(rawValue))) {
+            rawValue = 0;
+          }
+        }
+      } catch (apiError) {
+        rawValue = 0;
+      }
+    }
+    
+    // Format the value for display based on the metric type
+    try {
+      if (config.badgeMetric === 'totalTime') {
+        value = formatBadgeTime(rawValue);
+      } else {
+        // All other metrics use number format
+        value = formatBadgeNumber(rawValue);
+      }
+    } catch (formatError) {
+      value = '0';
+    }
+    
+    // Make sure the badge gets updated with the new value
+    try {
+      // Ensure value is always a string
+      if (typeof value !== 'string') {
+        value = String(value || '0');
+      }
+      
+      // Limit badge text to 4 characters for display purposes
+      if (value.length > 4) {
+        value = value.substring(0, 4);
+      }
+      
+      chrome.action.setBadgeText({ text: value });
+      chrome.action.setBadgeBackgroundColor({ color: config.badgeColor || '#6366f1' });
+    } catch (badgeError) {
+      // If we can't update the badge, at least clear it to avoid showing an error
+      try {
+        chrome.action.setBadgeText({ text: '!' });
+      } catch {
+        // Ignore errors when resetting badge
+      }
+      throw badgeError;
+    }
   } catch (error) {
-    console.error('Failed to update badge:', error);
-    chrome.action.setBadgeText({ text: '!' });
-    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+    // If all else fails, try to show an error badge, but don't throw more errors
+    try {
+      chrome.action.setBadgeText({ text: '!' });
+      chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+    } catch {
+      // Silent fail if even this doesn't work
+    }
   }
 }
 

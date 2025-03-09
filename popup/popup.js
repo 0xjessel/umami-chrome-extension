@@ -40,6 +40,9 @@ let api = null;
  * Format numbers for display
  */
 function formatNumber(num) {
+  if (num === undefined || num === null) {
+    return '0';
+  }
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1) + 'M';
   }
@@ -152,17 +155,16 @@ async function setInitialServerName() {
     const config = await StorageManager.getConfig();
     if (config.displayName) {
       elements.serverName.textContent = config.displayName;
-    } else if (config.baseUrl) {
-      // Extract hostname if we have a URL but no display name
-      const url = new URL(config.baseUrl);
-      const displayName = url.hostname.replace(/^www\./, '');
-      elements.serverName.textContent = displayName;
+    } else {
+      // Use empty string as default
+      elements.serverName.textContent = '';
       
-      // Cache it for future use
-      await StorageManager.updateConfig({ displayName });
+      // Cache empty string as the display name
+      await StorageManager.updateConfig({ displayName: '' });
     }
   } catch (error) {
-    console.error('Failed to load initial server name:', error);
+    console.error('Error setting server name:', error);
+    elements.serverName.textContent = '';
   }
 }
 
@@ -297,29 +299,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
- * Update server name in header
+ * Adjust header font size to fit container
  */
-async function updateServerName() {
-  const config = await StorageManager.getConfig();
-  
-  // Use cached display name if available, otherwise format from URL
-  let displayName = config.displayName;
-  if (!displayName && config.baseUrl) {
-    try {
-      const url = new URL(config.baseUrl);
-      displayName = url.hostname.replace(/^www\./, '');
-      
-      // Cache the display name for future use
-      await StorageManager.updateConfig({ displayName });
-    } catch (error) {
-      console.error('Error formatting server URL:', error);
-    }
-  }
-  
-  if (displayName) {
-    elements.serverName.textContent = displayName;
-  }
-
+function adjustHeaderFontSize() {
   // Get the container width
   const headerTitle = document.querySelector('.header-title');
   const containerWidth = headerTitle.offsetWidth - 50; // Account for logo and padding
@@ -333,6 +315,29 @@ async function updateServerName() {
     fontSize--;
     elements.serverName.style.fontSize = `${fontSize}px`;
   }
+}
+
+/**
+ * Update server name in header
+ */
+async function updateServerName() {
+  const config = await StorageManager.getConfig();
+  
+  // Use cached display name if available, otherwise use empty string
+  let displayName = config.displayName;
+  if (displayName === undefined) {
+    // Use empty string as default
+    displayName = '';
+    
+    // Cache the empty display name for future use
+    await StorageManager.updateConfig({ displayName });
+  }
+  
+  // Update the text content
+  elements.serverName.textContent = displayName;
+  
+  // Adjust font size if needed
+  adjustHeaderFontSize();
 }
 
 /**
@@ -405,7 +410,7 @@ function setLoadingState() {
 function updateStatsUI(activeUsers, stats) {
   // Update active users
   elements.activeUsers.querySelector('.stat-value').textContent = formatNumber(activeUsers);
-
+  
   // Update pageviews
   elements.pageViews.querySelector('.stat-value').textContent = formatNumber(stats.pageviews.value);
   updateTrend(elements.pageViews, stats.pageviews.value, stats.pageviews.prev);
