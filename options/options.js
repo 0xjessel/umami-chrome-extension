@@ -4,50 +4,15 @@ import { StorageManager } from '../src/storage.js';
 import { POLLING_INTERVALS, DEFAULT_POLLING_INTERVAL } from '../src/constants.js';
 import { UmamiAPI } from '../src/api.js';
 
-// UI Elements
-const elements = {
-  credentialsForm: document.getElementById('credentialsForm'),
-  displayForm: document.getElementById('displayForm'),
-  verifyButton: document.getElementById('verifyButton'),
-  resetButton: document.getElementById('resetButton'),
-  status: document.getElementById('status'),
-  selfHostedAuth: document.getElementById('selfHostedAuth'),
-  baseUrl: document.getElementById('baseUrl'),
-  urlHelp: document.getElementById('urlHelp'),
-  urlValidation: document.getElementById('urlValidation'),
-  password: document.getElementById('password'),
-  togglePassword: document.getElementById('togglePassword')
-};
-
-// Toggle password visibility
-if (elements.togglePassword) {
-  elements.togglePassword.addEventListener('click', () => {
-    // Toggle the type attribute of the password input
-    const type = elements.password.getAttribute('type') === 'password' ? 'text' : 'password';
-    elements.password.setAttribute('type', type);
-    
-    // Toggle the eye icon
-    const eyeIcon = elements.togglePassword.querySelector('svg');
-    if (type === 'password') {
-      // Show the "eye" icon (password is hidden)
-      eyeIcon.innerHTML = `
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-        <circle cx="12" cy="12" r="3"></circle>
-      `;
-    } else {
-      // Show the "eye-off" icon (password is visible)
-      eyeIcon.innerHTML = `
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-        <line x1="1" y1="1" x2="23" y2="23"></line>
-      `;
-    }
-  });
-}
+// Define elements variable but don't access DOM yet
+let elements = {};
 
 /**
  * Show status message
  */
 function showStatus(message, type = '') {
+  if (!elements.status) return;
+  
   elements.status.textContent = message;
   elements.status.className = `status ${type}`;
   
@@ -69,13 +34,13 @@ async function loadSettings() {
   // Load auth credentials
   elements.credentialsForm.querySelector('#username').value = config.username || '';
   elements.credentialsForm.querySelector('#password').value = config.password || '';
-
+  
   // Load display settings
   const badgeMetricInputs = elements.displayForm.querySelectorAll('input[name="badgeMetric"]');
   badgeMetricInputs.forEach(input => {
     input.checked = input.value === config.badgeMetric;
   });
-
+  
   // Load visible metrics settings
   elements.displayForm.querySelector('input[name="showActiveUsers"]').checked = config.showActiveUsers;
   elements.displayForm.querySelector('input[name="showPageViews"]').checked = config.showPageViews;
@@ -277,8 +242,49 @@ function validateUrl(input) {
   }
 }
 
-// Event Listeners
+// Initialize everything only after DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize DOM elements
+  elements = {
+    credentialsForm: document.getElementById('credentialsForm'),
+    displayForm: document.getElementById('displayForm'),
+    verifyButton: document.getElementById('verifyButton'),
+    resetButton: document.getElementById('resetButton'),
+    status: document.getElementById('status'),
+    selfHostedAuth: document.getElementById('selfHostedAuth'),
+    baseUrl: document.getElementById('baseUrl'),
+    urlHelp: document.getElementById('urlHelp'),
+    urlValidation: document.getElementById('urlValidation'),
+    password: document.getElementById('password'),
+    togglePassword: document.getElementById('togglePassword'),
+    updateBadgeButton: document.getElementById('updateBadgeButton')
+  };
+
+  // Toggle password visibility
+  if (elements.togglePassword) {
+    elements.togglePassword.addEventListener('click', () => {
+      // Toggle the type attribute of the password input
+      const type = elements.password.getAttribute('type') === 'password' ? 'text' : 'password';
+      elements.password.setAttribute('type', type);
+      
+      // Toggle the eye icon
+      const eyeIcon = elements.togglePassword.querySelector('svg');
+      if (type === 'password') {
+        // Show the "eye" icon (password is hidden)
+        eyeIcon.innerHTML = `
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        `;
+      } else {
+        // Show the "eye-off" icon (password is visible)
+        eyeIcon.innerHTML = `
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        `;
+      }
+    });
+  }
+
   // Load settings
   loadSettings();
   
@@ -303,39 +309,44 @@ document.addEventListener('DOMContentLoaded', () => {
   elements.baseUrl.addEventListener('blur', () => {
     elements.urlHelp.style.opacity = '1';
   });
-});
-
-// Add event listener for update badge button
-document.getElementById('updateBadgeButton').addEventListener('click', async () => {
-  try {
-    showStatus('Requesting badge update...', 'success');
-    
-    // Check if service worker is available
-    if (!chrome.runtime?.id) {
-      throw new Error('Extension context invalid or unavailable');
-    }
-    
-    // Send message with proper error handling
-    const response = await new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({ type: 'UPDATE_BADGE' }, (response) => {
-        // Check for error
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message || 'Failed to communicate with background service'));
-          return;
+  
+  // Add event listener for update badge button
+  if (elements.updateBadgeButton) {
+    elements.updateBadgeButton.addEventListener('click', async () => {
+      try {
+        showStatus('Requesting badge update...', 'success');
+        
+        // Check if service worker is available
+        if (!chrome.runtime?.id) {
+          throw new Error('Extension context invalid or unavailable');
         }
-        resolve(response || { success: true });
-      });
+        
+        // Send message with proper error handling
+        const response = await new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage({ type: 'UPDATE_BADGE' }, (response) => {
+            // Check for error
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message || 'Failed to communicate with background service'));
+              return;
+            }
+            resolve(response || { success: true });
+          });
+        });
+        
+        if (response.success) {
+          showStatus('Badge update successful!', 'success');
+        } else {
+          showStatus('Badge update completed with warnings', 'warning');
+        }
+      } catch (error) {
+        console.error('Badge update error:', error);
+        showStatus('Badge update failed: ' + error.message, 'error');
+      }
     });
-    
-    if (response.success) {
-      showStatus('Badge update successful!', 'success');
-    } else {
-      showStatus('Badge update completed with warnings', 'warning');
-    }
-  } catch (error) {
-    console.error('Badge update error:', error);
-    showStatus('Badge update failed: ' + error.message, 'error');
   }
+
+  // Setup keep-alive connection
+  setupKeepAliveConnection();
 });
 
 // Setup keep-alive port to background service worker
@@ -364,9 +375,3 @@ function setupKeepAliveConnection() {
     setTimeout(setupKeepAliveConnection, 5000);
   }
 }
-
-// Start keep-alive when options page loads
-document.addEventListener('DOMContentLoaded', () => {
-  loadSettings();
-  setupKeepAliveConnection();
-});

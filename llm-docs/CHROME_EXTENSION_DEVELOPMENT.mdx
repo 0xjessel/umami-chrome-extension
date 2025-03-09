@@ -40,6 +40,99 @@ The most significant constraint for many developers is the CSP restriction. In M
 - `'wasm-unsafe-eval'` is allowed for WebAssembly
 - Only scripts from the extension's own package can be loaded (`'self'`)
 
+### Handling DOM Access in Extension Pages
+
+One of the most common issues in Chrome extensions is improper DOM access timing, which can lead to errors like `Cannot read properties of null` when the JavaScript runs before the DOM is fully loaded. To prevent these issues:
+
+1. **Defer DOM Access Until DOMContentLoaded**
+
+   ```javascript
+   // Don't do this - may fail if script loads before DOM elements
+   const button = document.getElementById('myButton');
+   button.addEventListener('click', doSomething);
+
+   // Do this instead - wait for DOM to be fully loaded
+   document.addEventListener('DOMContentLoaded', () => {
+     const button = document.getElementById('myButton');
+     if (button) {
+       button.addEventListener('click', doSomething);
+     }
+   });
+   ```
+
+2. **Use Defensive Coding with Null Checks**
+
+   ```javascript
+   // Always check if elements exist before accessing their properties
+   function updateUI(data) {
+     const element = document.getElementById('results');
+     if (!element) return; // Guard clause to prevent errors
+
+     element.textContent = data.value;
+   }
+   ```
+
+3. **Avoid Top-Level DOM Access**
+
+   ```javascript
+   // Don't do this - DOM access at script's top level
+   const elements = {
+     button: document.getElementById('button'),
+     input: document.getElementById('input'),
+   };
+
+   // Do this instead - initialize without DOM access, populate later
+   let elements = {};
+
+   document.addEventListener('DOMContentLoaded', () => {
+     elements = {
+       button: document.getElementById('button'),
+       input: document.getElementById('input'),
+     };
+
+     // Now safe to use elements
+     setupEventListeners();
+   });
+   ```
+
+4. **Group DOM Operations Together**
+
+   ```javascript
+   document.addEventListener('DOMContentLoaded', () => {
+     // Group all DOM queries together
+     const button = document.getElementById('button');
+     const input = document.getElementById('input');
+     const form = document.getElementById('form');
+
+     // Then use them after checking existence
+     if (button && input && form) {
+       setupApplication(button, input, form);
+     } else {
+       console.error('Required DOM elements not found');
+     }
+   });
+   ```
+
+5. **Handle Dynamic Content Properly**
+
+   ```javascript
+   // For content that may be added dynamically
+   function setupDynamicContent() {
+     // Use MutationObserver to watch for DOM changes
+     const observer = new MutationObserver(mutations => {
+       mutations.forEach(mutation => {
+         if (mutation.addedNodes.length) {
+           checkForNewElements();
+         }
+       });
+     });
+
+     observer.observe(document.body, { childList: true, subtree: true });
+   }
+   ```
+
+By following these practices, you can avoid common DOM-related errors in your Chrome extensions and create a more robust user experience.
+
 ## Building a Chrome Extension with Manifest V3
 
 ### Project Structure

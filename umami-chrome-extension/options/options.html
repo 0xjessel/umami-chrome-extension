@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Umami Analytics</title>
+  <!-- Explicitly include CSS and JavaScript files -->
+  <link rel="stylesheet" href="options.css">
+  <script src="options.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>Umami Analytics</h1>
+    </header>
+
+    <main>
+      <!-- Credentials Section -->
+      <section class="card">
+        <h2>Umami Credentials</h2>
+        <form id="credentialsForm">
+          <div class="form-group">
+            <label for="baseUrl">Umami Server URL</label>
+            <input type="url" id="baseUrl" name="baseUrl" required 
+                   pattern="https?://.+" 
+                   placeholder="https://umami.yourwebsite.com"
+                   title="Please enter a valid URL starting with http:// or https://">
+            <div class="validation-message" id="urlValidation"></div>
+            <div class="help-text" id="urlHelp">Enter the full URL of your Umami server (e.g., https://umami.yourwebsite.com)</div>
+          </div>
+
+          <div id="selfHostedAuth" class="form-group">
+            <div class="form-group">
+              <label for="username">Username</label>
+              <input type="text" id="username" name="username" class="text-input" required>
+            </div>
+            <div class="form-group">
+              <label for="password">Password</label>
+              <div class="password-container">
+                <input type="password" id="password" name="password" required>
+                <button type="button" id="togglePassword" class="toggle-password" aria-label="Toggle password visibility">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="websiteId">Website ID</label>
+            <input type="text" id="websiteId" name="websiteId" class="text-input" required placeholder="71b28330-985c-42bd-9952-d32d7a3c240e">
+            <div class="help-text">Website ID can be found in Settings > Websites > yourwebsite.com > Edit > Details</div>
+          </div>
+
+          <div class="button-group">
+            <button type="submit" class="button primary">Save Credentials</button>
+            <button type="button" id="verifyButton" class="button">Verify Connection</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Display Settings -->
+      <section class="card">
+        <h2>Display Settings</h2>
+        <form id="displayForm">
+          <div class="form-group">
+            <label>Badge Display</label>
+            <div class="radio-group vertical">
+              <label class="radio">
+                <input type="radio" name="badgeMetric" value="active">
+                <div class="tooltip-container">
+                  <span>Active Users</span>
+                  <div class="icon-tooltip-wrapper">
+                    <span class="info-icon">i</span>
+                    <span class="tooltip">Number of unique visitors within the last 5 minutes</span>
+                  </div>
+                </div>
+              </label>
+              <label class="radio">
+                <input type="radio" name="badgeMetric" value="views">
+                <div class="tooltip-container">
+                  <span>Page Views</span>
+                  <div class="icon-tooltip-wrapper">
+                    <span class="info-icon">i</span>
+                    <span class="tooltip">Pages hits</span>
+                  </div>
+                </div>
+              </label>
+              <label class="radio">
+                <input type="radio" name="badgeMetric" value="visitors">
+                <div class="tooltip-container">
+                  <span>Visitors</span>
+                  <div class="icon-tooltip-wrapper">
+                    <span class="info-icon">i</span>
+                    <span class="tooltip">Number of unique visitors</span>
+                  </div>
+                </div>
+              </label>
+              <label class="radio">
+                <input type="radio" name="badgeMetric" value="visits">
+                <div class="tooltip-container">
+                  <span>Visits</span>
+                  <div class="icon-tooltip-wrapper">
+                    <span class="info-icon">i</span>
+                    <span class="tooltip">Number of sessions</span>
+                  </div>
+                </div>
+              </label>
+              <label class="radio">
+                <input type="radio" name="badgeMetric" value="bounces">
+                <div class="tooltip-container">
+                  <span>Bounces</span>
+                  <div class="icon-tooltip-wrapper">
+                    <span class="info-icon">i</span>
+                    <span class="tooltip">Number of visitors who only visit a single page</span>
+                  </div>
+                </div>
+              </label>
+              <label class="radio">
+                <input type="radio" name="badgeMetric" value="totalTime">
+                <div class="tooltip-container">
+                  <span>Total Time</span>
+                  <div class="icon-tooltip-wrapper">
+                    <span class="info-icon">i</span>
+                    <span class="tooltip">Time spent on the website</span>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Visible Metrics</label>
+            <div class="checkbox-group vertical">
+              <label class="checkbox">
+                <input type="checkbox" name="showActiveUsers" checked>
+                <span>Active Users</span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" name="showPageViews" checked>
+                <span>Page Views</span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" name="showVisitors" checked>
+                <span>Visitors</span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" name="showVisits">
+                <span>Visits</span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" name="showBounces">
+                <span>Bounces</span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" name="showTotalTime">
+                <span>Total Time</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="pollingInterval">Update Interval</label>
+            <select id="pollingInterval" name="pollingInterval">
+              <option value="THIRTY_SECONDS">30 seconds</option>
+              <option value="ONE_MINUTE" selected>1 minute</option>
+              <option value="TWO_MINUTES">2 minutes</option>
+              <option value="FIVE_MINUTES">5 minutes</option>
+              <option value="TEN_MINUTES">10 minutes</option>
+              <option value="THIRTY_MINUTES">30 minutes</option>
+            </select>
+          </div>
+
+          <div class="button-group">
+            <button type="submit" class="button primary">Save Settings</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Global Reset Section -->
+      <section class="card">
+        <h2>Reset All Settings</h2>
+        <div class="warning-text">This will reset all settings, including display preferences and Umami server credentials.</div>
+        <div class="button-group">
+          <button type="button" id="resetButton" class="button danger">Reset to Default</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Status Messages -->
+    <div id="status" class="status hidden"></div>
+
+    <!-- Footer with GitHub Link -->
+    <footer class="footer">
+      <a href="https://github.com/0xjessel/umami-chrome-extension" target="_blank" rel="noopener noreferrer" class="github-link" title="View on GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="github-icon">
+          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+        </svg>
+      </a>
+      <span class="creator-text">created by <a href="https://github.com/0xjessel" target="_blank" rel="noopener noreferrer"><strong>0xjessel</strong></a></span>
+    </footer>
+  </div>
+  <!-- JavaScript is injected by webpack during build process -->
+</body>
+
+</html>

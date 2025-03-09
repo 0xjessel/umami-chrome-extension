@@ -16,24 +16,8 @@ async function debouncedUpdate() {
   }
 }
 
-// UI Elements
-const elements = {
-  setupRequired: document.getElementById('setupRequired'),
-  errorMessage: document.getElementById('errorMessage'),
-  stats: document.getElementById('stats'),
-  loading: document.getElementById('loading'),
-  activeUsers: document.getElementById('activeUsers'),
-  pageViews: document.getElementById('pageViews'),
-  visitors: document.getElementById('visitors'),
-  visits: document.getElementById('visits'),
-  bounces: document.getElementById('bounces'),
-  totalTime: document.getElementById('totalTime'),
-  settingsButton: document.getElementById('settingsButton'),
-  openSettings: document.getElementById('openSettings'),
-  retryButton: document.getElementById('retryButton'),
-  refreshButton: document.getElementById('refreshButton'),
-  serverName: document.getElementById('serverName')
-};
+// Define elements but don't access DOM yet
+let elements = {};
 
 let api = null;
 
@@ -54,23 +38,29 @@ function formatNumber(num) {
 }
 
 /**
- * Format time in minutes to human readable format
+ * Format time in minutes to display format
  */
 function formatTime(minutes) {
-  if (!minutes) return '0m';
+  if (minutes === undefined || minutes === null) {
+    return '0s';
+  }
+  
+  if (minutes < 1) {
+    const seconds = Math.round(minutes * 60);
+    return seconds + 's';
+  }
   
   if (minutes < 60) {
-    return `${Math.round(minutes)}m`;
+    return Math.round(minutes) + 'm';
   }
   
   const hours = Math.floor(minutes / 60);
-  const remainingMinutes = Math.round(minutes % 60);
-  
-  if (remainingMinutes === 0) {
-    return `${hours}h`;
+  if (hours < 24) {
+    return hours + 'h';
   }
   
-  return `${hours}h ${remainingMinutes}m`;
+  const days = Math.floor(hours / 24);
+  return days + 'd';
 }
 
 /**
@@ -116,25 +106,27 @@ function updateTrend(element, current, previous) {
  * Show specified element and hide others
  */
 function showElement(elementToShow) {
-  // Hide all main content elements
+  if (!elements.setupRequired || !elements.errorMessage || !elements.stats || !elements.loading) return;
+
+  // Hide all elements first
   elements.setupRequired.classList.add('hidden');
   elements.errorMessage.classList.add('hidden');
   elements.stats.classList.add('hidden');
   elements.loading.classList.add('hidden');
   
-  // Show or hide action buttons
-  elements.retryButton.classList.add('hidden');
-  elements.refreshButton.classList.remove('hidden');
-
   // Show the requested element
-  if (elementToShow) {
-    elementToShow.classList.remove('hidden');
-  }
-
-  // Show retry button when error is shown
-  if (elementToShow === elements.errorMessage) {
-    elements.retryButton.classList.remove('hidden');
-    elements.refreshButton.classList.add('hidden');
+  elementToShow.classList.remove('hidden');
+  
+  // Show or hide action buttons
+  if (elements.retryButton && elements.refreshButton) {
+    elements.retryButton.classList.add('hidden');
+    elements.refreshButton.classList.remove('hidden');
+    
+    // Show retry button when error is shown
+    if (elementToShow === elements.errorMessage) {
+      elements.retryButton.classList.remove('hidden');
+      elements.refreshButton.classList.add('hidden');
+    }
   }
   
   // Set appropriate height for different states
@@ -150,12 +142,19 @@ function showElement(elementToShow) {
   }
 }
 
-// Immediately set server name on load
+/**
+ * Set initial server name from storage
+ */
 async function setInitialServerName() {
   try {
+    if (!elements.serverName) return;
+    
+    // Get server display name from storage
     const config = await StorageManager.getConfig();
-    if (config.displayName) {
-      elements.serverName.textContent = config.displayName;
+    const displayName = config.displayName || '';
+    
+    if (displayName) {
+      elements.serverName.textContent = displayName;
     } else {
       // Use empty string as default
       elements.serverName.textContent = '';
@@ -165,7 +164,9 @@ async function setInitialServerName() {
     }
   } catch (error) {
     console.error('Error setting server name:', error);
-    elements.serverName.textContent = '';
+    if (elements.serverName) {
+      elements.serverName.textContent = '';
+    }
   }
 }
 
@@ -265,6 +266,72 @@ function adjustPopupHeight() {
  * Initialize popup
  */
 document.addEventListener('DOMContentLoaded', async () => {
+  // Initialize DOM elements
+  elements = {
+    setupRequired: document.getElementById('setupRequired'),
+    errorMessage: document.getElementById('errorMessage'),
+    stats: document.getElementById('stats'),
+    loading: document.getElementById('loading'),
+    activeUsers: document.getElementById('activeUsers'),
+    pageViews: document.getElementById('pageViews'),
+    visitors: document.getElementById('visitors'),
+    visits: document.getElementById('visits'),
+    bounces: document.getElementById('bounces'),
+    totalTime: document.getElementById('totalTime'),
+    settingsButton: document.getElementById('settingsButton'),
+    openSettings: document.getElementById('openSettings'),
+    retryButton: document.getElementById('retryButton'),
+    refreshButton: document.getElementById('refreshButton'),
+    serverName: document.getElementById('serverName')
+  };
+
+  // Set up event listeners
+  if (elements.settingsButton) {
+    elements.settingsButton.addEventListener('click', () => {
+      chrome.runtime.openOptionsPage();
+    });
+  }
+
+  if (elements.openSettings) {
+    elements.openSettings.addEventListener('click', () => {
+      chrome.runtime.openOptionsPage();
+    });
+  }
+
+  if (elements.retryButton) {
+    elements.retryButton.addEventListener('click', () => {
+      // Show stats container and loading state
+      showElement(elements.stats);
+      setLoadingState();
+
+      // Disable retry button during update
+      elements.retryButton.disabled = true;
+
+      // Start retry and re-enable button when done
+      debouncedUpdate();
+      Promise.resolve().finally(() => {
+        elements.retryButton.disabled = false;
+      });
+    });
+  }
+
+  // Refresh button click handler
+  if (elements.refreshButton) {
+    elements.refreshButton.addEventListener('click', () => {
+      // Show loading state
+      setLoadingState();
+
+      // Disable refresh button during update
+      elements.refreshButton.disabled = true;
+
+      // Start refresh and re-enable button when done
+      debouncedUpdate();
+      Promise.resolve().finally(() => {
+        elements.refreshButton.disabled = false;
+      });
+    });
+  }
+
   // Immediately set server name and load cached metrics
   await setInitialServerName();
   const hasCachedMetrics = await loadCachedMetrics();
@@ -273,12 +340,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const config = await StorageManager.getConfig();
   
   // Apply visibility settings based on user preferences
-  if (!config.showActiveUsers) elements.activeUsers.classList.add('hidden');
-  if (!config.showPageViews) elements.pageViews.classList.add('hidden');
-  if (!config.showVisitors) elements.visitors.classList.add('hidden');
-  if (!config.showVisits) elements.visits.classList.add('hidden');
-  if (!config.showBounces) elements.bounces.classList.add('hidden');
-  if (!config.showTotalTime) elements.totalTime.classList.add('hidden');
+  if (!config.showActiveUsers && elements.activeUsers) elements.activeUsers.classList.add('hidden');
+  if (!config.showPageViews && elements.pageViews) elements.pageViews.classList.add('hidden');
+  if (!config.showVisitors && elements.visitors) elements.visitors.classList.add('hidden');
+  if (!config.showVisits && elements.visits) elements.visits.classList.add('hidden');
+  if (!config.showBounces && elements.bounces) elements.bounces.classList.add('hidden');
+  if (!config.showTotalTime && elements.totalTime) elements.totalTime.classList.add('hidden');
   
   // Show stats container immediately
   showElement(elements.stats);
@@ -287,16 +354,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!hasCachedMetrics) {
     setLoadingState();
   }
-
+  
   // Adjust card layout for responsive display
   document.querySelectorAll('.stat-card').forEach(card => {
     card.style.display = 'flex';
     card.style.flexDirection = 'column';
     card.style.justifyContent = 'space-between';
   });
-
-  // Start loading data with debounce
-  debouncedUpdate();
+  
+  // Initialize API and fetch latest stats
+  const apiInitialized = await initializeAPI();
+  if (apiInitialized) {
+    await debouncedUpdate();
+  }
 });
 
 /**
@@ -487,45 +557,6 @@ async function updateStats() {
     showElement(elements.errorMessage);
   }
 }
-
-// Event Listeners
-elements.settingsButton.addEventListener('click', () => {
-  chrome.runtime.openOptionsPage();
-});
-
-elements.openSettings.addEventListener('click', () => {
-  chrome.runtime.openOptionsPage();
-});
-
-elements.retryButton.addEventListener('click', () => {
-  // Show stats container and loading state
-  showElement(elements.stats);
-  setLoadingState();
-
-  // Disable retry button during update
-  elements.retryButton.disabled = true;
-
-  // Start retry and re-enable button when done
-  debouncedUpdate();
-  Promise.resolve().finally(() => {
-    elements.retryButton.disabled = false;
-  });
-});
-
-// Refresh button click handler
-elements.refreshButton.addEventListener('click', () => {
-  // Show loading state
-  setLoadingState();
-
-  // Disable refresh button during update
-  elements.refreshButton.disabled = true;
-
-  // Start refresh and re-enable button when done
-  debouncedUpdate();
-  Promise.resolve().finally(() => {
-    elements.refreshButton.disabled = false;
-  });
-});
 
 // Cleanup function to reset state when popup closes
 function cleanup() {

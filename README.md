@@ -216,6 +216,13 @@ This extension is not officially affiliated with Umami but was built with apprec
    - Try reopening the popup
 
 4. **Extension size is large when loading unpacked**
+
    - Make sure to load ONLY the `dist` directory when using "Load unpacked"
    - The full project directory includes development dependencies that are not needed for the extension
    - Use `./build.sh --clean` before loading the extension
+
+5. **Console errors about null elements**
+   - This extension properly handles DOM loading timing to prevent errors
+   - All element access is deferred until after DOMContentLoaded event
+   - Null checks are implemented throughout the codebase to prevent errors
+   - If you experience any DOM-related errors, please report them as issues
