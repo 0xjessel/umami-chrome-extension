@@ -5,7 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Umami Analytics</title>
-  <!-- CSS is injected by webpack during build process -->
+  <!-- Explicitly include CSS and JavaScript files -->
+  <link rel="stylesheet" href="popup.css">
+  <script type="module" src="popup.js"></script>
 </head>
 
 <body>
@@ -119,7 +121,6 @@
       <div class="spinner"></div>
     </div>
   </div>
-  <script type="module" src="popup.js"></script>
 </body>
 
 </html>

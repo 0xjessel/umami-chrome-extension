@@ -6,76 +6,6 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const fs = require('fs');
 
-// Custom plugin to ensure all chunks are available in subdirectories
-class EnsureChunksPlugin {
-  apply(compiler) {
-    compiler.hooks.afterEmit.tapAsync('EnsureChunksPlugin', (compilation, callback) => {
-      const outputPath = compilation.outputOptions.path;
-      const targetDirs = ['options', 'popup'];
-      
-      // Find all JS files in the root directory
-      const jsFiles = fs.readdirSync(outputPath)
-        .filter(file => file.endsWith('.js') && !['background.js', 'options.js', 'popup.js'].includes(file));
-      
-      // Copy each JS file to each target directory
-      jsFiles.forEach(file => {
-        const srcPath = path.join(outputPath, file);
-        
-        targetDirs.forEach(dir => {
-          const destDir = path.join(outputPath, dir);
-          const destPath = path.join(destDir, file);
-          
-          // Make sure the directory exists
-          if (!fs.existsSync(destDir)) {
-            fs.mkdirSync(destDir, { recursive: true });
-          }
-          
-          // Copy the file if it doesn't exist in the destination directory
-          if (!fs.existsSync(destPath)) {
-            fs.copyFileSync(srcPath, destPath);
-            console.log(`Copied ${file} to ${dir}/`);
-          }
-        });
-      });
-      
-      callback();
-    });
-  }
-}
-
-// Custom plugin to fix HTML file paths
-class FixHtmlPathsPlugin {
-  apply(compiler) {
-    compiler.hooks.afterEmit.tapAsync('FixHtmlPathsPlugin', (compilation, callback) => {
-      const outputPath = compilation.outputOptions.path;
-      
-      // Fix options.html
-      const optionsHtmlPath = path.join(outputPath, 'options', 'options.html');
-      if (fs.existsSync(optionsHtmlPath)) {
-        let html = fs.readFileSync(optionsHtmlPath, 'utf8');
-        // Fix paths by removing directory prefix
-        html = html.replace(/src="\.\/options\//g, 'src="./');
-        html = html.replace(/href="\.\/options\//g, 'href="./');
-        fs.writeFileSync(optionsHtmlPath, html);
-        console.log('Fixed paths in options.html');
-      }
-      
-      // Fix popup.html
-      const popupHtmlPath = path.join(outputPath, 'popup', 'popup.html');
-      if (fs.existsSync(popupHtmlPath)) {
-        let html = fs.readFileSync(popupHtmlPath, 'utf8');
-        // Fix paths by removing directory prefix
-        html = html.replace(/src="\.\/popup\//g, 'src="./');
-        html = html.replace(/href="\.\/popup\//g, 'href="./');
-        fs.writeFileSync(popupHtmlPath, html);
-        console.log('Fixed paths in popup.html');
-      }
-      
-      callback();
-    });
-  }
-}
-
 module.exports = {
   watch: process.env.NODE_ENV === 'development',
   watchOptions: {
@@ -137,21 +67,17 @@ module.exports = {
         test: /\.css$/,
         use: [MiniCssExtractPlugin.loader, 'css-loader']
       },
-      // Ensure HTML files preserve ES module scripts
+      // Don't process HTML with html-loader to preserve our manual script tags
       {
         test: /\.html$/,
-        use: [
-          {
-            loader: 'html-loader',
-            options: {
-              minimize: {
-                removeScriptTypeAttributes: false, // Preserve script type attributes
-                collapseWhitespace: true,
-                removeComments: true
-              }
-            }
+        type: 'asset/resource',
+        generator: {
+          filename: ({ filename }) => {
+            // Strip the source directory from the filename
+            const parts = filename.split('/');
+            return parts.length > 1 ? `${parts[0]}/${parts[parts.length - 1]}` : filename;
           }
-        ]
+        }
       }
     ]
   },
@@ -168,45 +94,25 @@ module.exports = {
         { 
           from: 'icons', 
           to: 'icons',
-          // Only copy png files from icons directory
           filter: (resourcePath) => resourcePath.endsWith('.png')
         },
-        // Only copy essential source files that are actually needed at runtime
         { 
           from: 'src',
           to: 'src',
           filter: (resourcePath) => {
-            // Example filter - adjust based on what files are actually needed
             return resourcePath.endsWith('.js') && !resourcePath.includes('test') && !resourcePath.includes('.spec');
           }
+        },
+        // Copy HTML files directly without processing
+        {
+          from: 'popup/popup.html',
+          to: 'popup/popup.html'
+        },
+        {
+          from: 'options/options.html',
+          to: 'options/options.html'
         }
       ]
-    }),
-    new HtmlWebpackPlugin({
-      template: './popup/popup.html',
-      filename: 'popup/popup.html',
-      chunks: ['popup'],
-      publicPath: './',
-      minify: {
-        collapseWhitespace: true,
-        removeComments: true,
-        removeRedundantAttributes: true,
-        removeScriptTypeAttributes: false,
-        useShortDoctype: true
-      }
-    }),
-    new HtmlWebpackPlugin({
-      template: './options/options.html',
-      filename: 'options/options.html',
-      chunks: ['options'],
-      publicPath: './',
-      minify: {
-        collapseWhitespace: true,
-        removeComments: true,
-        removeRedundantAttributes: true,
-        removeScriptTypeAttributes: false,
-        useShortDoctype: true
-      }
     }),
     new MiniCssExtractPlugin({
       filename: (pathData) => {
@@ -215,19 +121,16 @@ module.exports = {
           : `${pathData.chunk.name}/[name].css`;
       }
     }),
-    new EnsureChunksPlugin(),
-    new FixHtmlPathsPlugin()
   ],
   optimization: {
     minimizer: [
       new TerserPlugin({
         terserOptions: {
           compress: {
-            drop_console: true, // Remove all console logs in production builds
+            drop_console: true,
             passes: 2
           },
           mangle: true,
-          // Ensure Terser doesn't use unsafe transformations
           ecma: 2020,
           module: true,
           toplevel: true,
@@ -240,8 +143,6 @@ module.exports = {
       chunks: 'all',
       maxInitialRequests: Infinity,
       minSize: 0,
-      // Disable the automatic creation of the commons chunk
-      // This will cause each entry point to get its own complete bundle
       cacheGroups: {
         defaultVendors: false,
         default: false
