@@ -4,6 +4,77 @@ const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const fs = require('fs');
+
+// Custom plugin to ensure all chunks are available in subdirectories
+class EnsureChunksPlugin {
+  apply(compiler) {
+    compiler.hooks.afterEmit.tapAsync('EnsureChunksPlugin', (compilation, callback) => {
+      const outputPath = compilation.outputOptions.path;
+      const targetDirs = ['options', 'popup'];
+      
+      // Find all JS files in the root directory
+      const jsFiles = fs.readdirSync(outputPath)
+        .filter(file => file.endsWith('.js') && !['background.js', 'options.js', 'popup.js'].includes(file));
+      
+      // Copy each JS file to each target directory
+      jsFiles.forEach(file => {
+        const srcPath = path.join(outputPath, file);
+        
+        targetDirs.forEach(dir => {
+          const destDir = path.join(outputPath, dir);
+          const destPath = path.join(destDir, file);
+          
+          // Make sure the directory exists
+          if (!fs.existsSync(destDir)) {
+            fs.mkdirSync(destDir, { recursive: true });
+          }
+          
+          // Copy the file if it doesn't exist in the destination directory
+          if (!fs.existsSync(destPath)) {
+            fs.copyFileSync(srcPath, destPath);
+            console.log(`Copied ${file} to ${dir}/`);
+          }
+        });
+      });
+      
+      callback();
+    });
+  }
+}
+
+// Custom plugin to fix HTML file paths
+class FixHtmlPathsPlugin {
+  apply(compiler) {
+    compiler.hooks.afterEmit.tapAsync('FixHtmlPathsPlugin', (compilation, callback) => {
+      const outputPath = compilation.outputOptions.path;
+      
+      // Fix options.html
+      const optionsHtmlPath = path.join(outputPath, 'options', 'options.html');
+      if (fs.existsSync(optionsHtmlPath)) {
+        let html = fs.readFileSync(optionsHtmlPath, 'utf8');
+        // Fix paths by removing directory prefix
+        html = html.replace(/src="\.\/options\//g, 'src="./');
+        html = html.replace(/href="\.\/options\//g, 'href="./');
+        fs.writeFileSync(optionsHtmlPath, html);
+        console.log('Fixed paths in options.html');
+      }
+      
+      // Fix popup.html
+      const popupHtmlPath = path.join(outputPath, 'popup', 'popup.html');
+      if (fs.existsSync(popupHtmlPath)) {
+        let html = fs.readFileSync(popupHtmlPath, 'utf8');
+        // Fix paths by removing directory prefix
+        html = html.replace(/src="\.\/popup\//g, 'src="./');
+        html = html.replace(/href="\.\/popup\//g, 'href="./');
+        fs.writeFileSync(popupHtmlPath, html);
+        console.log('Fixed paths in popup.html');
+      }
+      
+      callback();
+    });
+  }
+}
 
 module.exports = {
   watch: process.env.NODE_ENV === 'development',
@@ -22,7 +93,22 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name].js',
+    filename: (pathData) => {
+      return pathData.chunk.name === 'background' 
+        ? '[name].js'
+        : `${pathData.chunk.name}/[name].js`;
+    },
+    chunkFilename: (pathData) => {
+      const issuer = pathData.chunk.modules?.[0]?.issuerPath?.[0]?.name || '';
+      
+      if (issuer.includes('popup')) {
+        return 'popup/[id].js';
+      } else if (issuer.includes('options')) {
+        return 'options/[id].js';
+      } else {
+        return '[id].js';
+      }
+    },
     clean: true,
     module: true,
     environment: {
@@ -100,7 +186,7 @@ module.exports = {
       template: './popup/popup.html',
       filename: 'popup/popup.html',
       chunks: ['popup'],
-      publicPath: '../',
+      publicPath: './',
       minify: {
         collapseWhitespace: true,
         removeComments: true,
@@ -113,7 +199,7 @@ module.exports = {
       template: './options/options.html',
       filename: 'options/options.html',
       chunks: ['options'],
-      publicPath: '../',
+      publicPath: './',
       minify: {
         collapseWhitespace: true,
         removeComments: true,
@@ -123,8 +209,14 @@ module.exports = {
       }
     }),
     new MiniCssExtractPlugin({
-      filename: '[name].css'
-    })
+      filename: (pathData) => {
+        return pathData.chunk.name === 'background' 
+          ? '[name].css'
+          : `${pathData.chunk.name}/[name].css`;
+      }
+    }),
+    new EnsureChunksPlugin(),
+    new FixHtmlPathsPlugin()
   ],
   optimization: {
     minimizer: [
@@ -148,21 +240,11 @@ module.exports = {
       chunks: 'all',
       maxInitialRequests: Infinity,
       minSize: 0,
+      // Disable the automatic creation of the commons chunk
+      // This will cause each entry point to get its own complete bundle
       cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name(module) {
-            // Get the name of the npm package
-            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
-            // Return a minified name to reduce file size
-            return `npm.${packageName.replace('@', '')}`;
-          }
-        },
-        commons: {
-          name: 'commons',
-          chunks: 'initial',
-          minChunks: 2
-        }
+        defaultVendors: false,
+        default: false
       }
     }
   }
