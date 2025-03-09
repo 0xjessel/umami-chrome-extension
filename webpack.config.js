@@ -4,6 +4,51 @@ const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const fs = require('fs');
+
+// Custom plugin to copy shared chunks to subdirectories
+class CopyChunksPlugin {
+  constructor(options) {
+    this.options = options || {};
+  }
+
+  apply(compiler) {
+    // After the assets are emitted to the output directory
+    compiler.hooks.done.tap('CopyChunksPlugin', stats => {
+      const outputPath = compiler.options.output.path;
+      const subdirectories = this.options.subdirectories || [];
+      const ignoreFiles = this.options.ignoreFiles || [];
+      
+      if (!fs.existsSync(outputPath)) {
+        console.error(`Output path ${outputPath} does not exist!`);
+        return;
+      }
+      
+      // Get all JS files in the output directory
+      const files = fs.readdirSync(outputPath)
+        .filter(file => file.endsWith('.js') && !ignoreFiles.some(ignore => file.includes(ignore)));
+      
+      // Copy each shared JS file to each subdirectory
+      files.forEach(file => {
+        const filePath = path.join(outputPath, file);
+        
+        subdirectories.forEach(dir => {
+          const targetDir = path.join(outputPath, dir);
+          const targetPath = path.join(targetDir, file);
+          
+          // Create directory if it doesn't exist
+          if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+          }
+          
+          // Copy the file
+          fs.copyFileSync(filePath, targetPath);
+          console.log(`Copied ${file} to ${path.relative(outputPath, targetPath)}`);
+        });
+      });
+    });
+  }
+}
 
 module.exports = {
   watch: process.env.NODE_ENV === 'development',
@@ -25,7 +70,6 @@ module.exports = {
     filename: '[name].js',
     clean: true,
     module: true,
-    publicPath: './', // Ensures assets use relative paths for consistent loading in extension context
     environment: {
       arrowFunction: true,
       bigIntLiteral: false,
@@ -101,6 +145,7 @@ module.exports = {
       template: './popup/popup.html',
       filename: 'popup/popup.html',
       chunks: ['popup'],
+      publicPath: '../',
       minify: {
         collapseWhitespace: true,
         removeComments: true,
@@ -113,6 +158,7 @@ module.exports = {
       template: './options/options.html',
       filename: 'options/options.html',
       chunks: ['options'],
+      publicPath: '../',
       minify: {
         collapseWhitespace: true,
         removeComments: true,
@@ -122,7 +168,7 @@ module.exports = {
       }
     }),
     new MiniCssExtractPlugin({
-      filename: '[name].css'  // Outputs CSS files directly in dist root for proper loading
+      filename: '[name].css'
     })
   ],
   optimization: {
@@ -156,6 +202,11 @@ module.exports = {
             // Return a minified name to reduce file size
             return `npm.${packageName.replace('@', '')}`;
           }
+        },
+        commons: {
+          name: 'commons',
+          chunks: 'initial',
+          minChunks: 2
         }
       }
     }

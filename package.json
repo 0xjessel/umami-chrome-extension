@@ -4,8 +4,8 @@
   "description": "Chrome extension for Umami Analytics with real-time metrics display",
   "private": true,
   "scripts": {
-    "build": "webpack --mode production --devtool=nosources-source-map",
-    "build:clean": "rm -rf dist && webpack --mode production --devtool=nosources-source-map",
+    "build": "webpack --mode production --devtool=nosources-source-map && ./copy-assets.sh",
+    "build:clean": "rm -rf dist && webpack --mode production --devtool=nosources-source-map && ./copy-assets.sh",
     "build:pack": "npm run build:clean && cd dist && zip -r ../umami-chrome-extension.zip *",
     "dev": "webpack --mode development --watch --devtool=nosources-source-map",
     "lint": "eslint src/**/*.js popup/**/*.js options/**/*.js background.js",
