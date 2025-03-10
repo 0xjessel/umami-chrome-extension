@@ -23,7 +23,7 @@ global.URL = class URL {
     
     // Extract hostname from URL for testing
     try {
-      const urlPattern = /^(https?:\/\/)?([\w.-]+)/i;
+      const urlPattern = /^(https?:\/\/)?([^\/]+)/i;
       const match = url.match(urlPattern);
       this.hostname = match ? match[2] : '';
     } catch (e) {
