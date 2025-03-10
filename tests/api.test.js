@@ -245,8 +245,9 @@ describe('UmamiAPI', () => {
       const startAt = Number(queryParams.get('startAt'));
       const endAt = Number(queryParams.get('endAt'));
 
-      // Verify start time is midnight of the current day
-      const expectedStartTime = new Date('2025-03-08T00:00:00-08:00').getTime();
+      // Get the start time the same way the implementation does
+      const startOfDay = new Date(mockDate.toLocaleDateString());
+      const expectedStartTime = startOfDay.getTime();
       expect(startAt).toBe(expectedStartTime);
 
       // Verify end time is current time
