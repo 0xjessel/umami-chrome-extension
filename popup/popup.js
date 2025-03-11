@@ -404,8 +404,26 @@ async function updateServerName() {
     await StorageManager.updateConfig({ displayName });
   }
   
-  // Update the text content
-  elements.serverName.textContent = displayName;
+  // Check if we have the necessary information to create a dashboard link
+  if (displayName && config.baseUrl && config.websiteId) {
+    // Create a link to the Umami dashboard
+    const dashboardUrl = `${config.baseUrl}/websites/${config.websiteId}`;
+    
+    // Clear the existing contents
+    elements.serverName.innerHTML = '';
+    
+    // Create and append the link
+    const link = document.createElement('a');
+    link.href = dashboardUrl;
+    link.textContent = displayName;
+    link.target = '_blank'; // Open in new tab
+    link.className = 'server-name-link';
+    
+    elements.serverName.appendChild(link);
+  } else {
+    // For when no dashboard link can be created, just set text
+    elements.serverName.textContent = displayName;
+  }
   
   // Adjust font size if needed
   adjustHeaderFontSize();

@@ -80,6 +80,20 @@ header {
   max-width: 180px;
 }
 
+/* Style for the server name link to make it look like regular text */
+.server-name-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.server-name-link:hover, 
+.server-name-link:active, 
+.server-name-link:visited {
+  text-decoration: none;
+  color: inherit;
+}
+
 h1 {
   font-size: 1.25rem;
   font-weight: 600;
