@@ -1,30 +1,6 @@
 # TODO List
 
 ## High Priority
-- [ ] Fix refresh icon in popup header - add proper refresh icon with rotation animation
-- [ ] Fix failing test in api.test.js - URL comparison in getDailyStats test is failing due to URL object handling
-- [ ] Add .watchmanconfig file to resolve Jest Watchman crawl errors
-- [ ] Add GitHub icon and link to the project repository once it's set up on GitHub
 
-## Testing Improvements
-- [ ] Add integration tests for Chrome extension APIs (chrome.storage, chrome.runtime)
-- [ ] Add end-to-end tests for critical user flows (options page configuration, data collection)
-- [ ] Configure Jest test coverage reporting with istanbul
-- [ ] Set up test coverage thresholds (aim for >80% coverage)
-
-## CI/CD
-- [ ] Set up GitHub Actions workflow for running tests
-- [ ] Add test coverage reporting to CI pipeline
-- [ ] Configure automated extension packaging and release
-- [ ] Add automated dependency updates with Dependabot
-
-## Security
-- [ ] Add security policy (SECURITY.md)
-- [ ] Implement secure credential storage best practices
-- [ ] Add automated security scanning in CI pipeline
-- [ ] Conduct security audit of dependencies
-
-## Future Enhancements
-- [ ] Add error logging and telemetry for better debugging
-- [ ] Consider adding a dark mode theme to match Umami's design system
-- [ ] Consider adding internationalization support
+- [ ] The popup servername reflows on initial load. We should fix that to provide a smoother UI experience.
+- [ ] Opening the popup has a long latency. We need to fix the performance and not have the network fetches block the UI updates.
