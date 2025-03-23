@@ -70,6 +70,10 @@ function formatTrend(current, previous) {
   if (!previous) return '';
 
   const percentage = ((current - previous) / previous) * 100;
+  
+  // Return empty string for 0% change
+  if (percentage === 0) return '';
+  
   const sign = percentage >= 0 ? '+' : '-';
   const absValue = Math.abs(percentage);
   
